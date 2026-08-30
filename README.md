@@ -4,7 +4,7 @@ GYST is a human-owned daily and weekly ritual ledger. The application can read b
 
 ## Current checkpoint
 
-The application release baseline before this documentation update is `369733b0f6eb50c1d9cf606b09b2e0a1c0b5b8ad`. The approved Wave 2 migration is now present in production; Vercel's Git integration deployed that application commit without changing any production environment configuration:
+Current `main` and the production application release are `04851f557d24d4c43d65106ba5f4beb302613191`. The approved Wave 2 migration is present in production, and the two browser-safe Supabase values have been configured in Vercel Production under separate A5 approval:
 
 - Production: <https://gyst-web-mcp.vercel.app>
 - Next.js App Router: public landing/sign-in plus request-dynamic authenticated `/daily` and `/weekly` shells
@@ -15,7 +15,7 @@ The application release baseline before this documentation update is `369733b0f6
 - Performance advisors: local post-pgTAP has three expected informational unused-index notices; the new, empty production schema has 18 informational unused-index notices and no security/error finding
 - Reminder Worker: local skeleton and successful Wrangler dry runs only
 
-The production homepage is healthy. `/daily` redirects to `/login?reason=configuration` because the browser-safe Supabase URL and publishable key have not been configured in Vercel; that configuration is a separate approval gate and has not been changed. The daily/weekly ritual forms, atomic human commit, WebMCP tools, reminders, Turnstile, Resend, and demo ledger still need to be built.
+The production homepage is healthy. `/daily` now redirects an unauthenticated visitor to `/login`, confirming that the application can read its browser-safe Supabase configuration; no real user was created or signed in for this check. The daily/weekly ritual forms, atomic human commit, WebMCP tools, reminders, Turnstile, Resend, and demo ledger still need to be built. See [the production activation evidence](docs/deployment/production-a5-a9-evidence-2026-08-30.md) for the sanitized A5/A9 record.
 
 ## Local development
 

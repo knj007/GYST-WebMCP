@@ -38,4 +38,4 @@ Approved scope: only `20260830194920_wave2_application_schema.sql`
 ## Remaining boundaries
 
 - This A2 approval does not authorize another migration, remote configuration, secret write, production data write, user creation, email, deployment, rollback, or RLS change.
-- Vercel production browser-safe Supabase values remain intentionally unconfigured and require their own evidence packet and approval.
+- At the time of this A2 migration, Vercel production browser-safe Supabase values remained unconfigured. That historical condition was later resolved under separate A5 approval; see [the A5/A9 production activation evidence](../deployment/production-a5-a9-evidence-2026-08-30.md).

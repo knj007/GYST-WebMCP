@@ -1,6 +1,6 @@
 # GYST WebMCP Execution Runbook
 
-Status: execution in progress; Wave 2 production database foundation verified and deployed
+Status: execution in progress; Wave 2 production foundation and browser-safe application activation verified
 Prepared: 2026-08-29
 Last verified: 2026-08-30
 Submission target: 2026-09-03 at 1:00 p.m. Pacific / 3:00 p.m. Central
@@ -56,19 +56,19 @@ The earlier product plan remains the product specification. This runbook is the 
 
 ### 2.1 Current execution checkpoint — 2026-08-30
 
-- Local `main`, `origin/main`, and GitHub `main` resolve to `369733b0f6eb50c1d9cf606b09b2e0a1c0b5b8ad` before this documentation update; the prior foundation deployment at `b6ba3ea` is historical evidence only.
+- GitHub `main` resolves to `04851f557d24d4c43d65106ba5f4beb302613191`. The earlier `369733b0f6eb50c1d9cf606b09b2e0a1c0b5b8ad` database/application baseline and the foundation deployment at `b6ba3ea` are historical evidence only.
 - The repository contains a strict TypeScript Next.js 16.3.3 App Router application with Tailwind, ESLint, Vitest, Playwright, a committed npm lockfile, and Node 24.x runtime metadata.
 - The application has a marketing page, sign-in flow, Supabase SSR clients, centralized `getClaims()` authorization, and request-dynamic authenticated daily/weekly route shells. It does not yet contain the ritual forms, atomic human-only commit, WebMCP tools, reminders, or demo ledger.
 - Docker Desktop and Supabase CLI 2.116.0 are available. The local Postgres 17 stack starts successfully with analytics disabled, and all core containers are running.
 - Both tracked migrations are present locally and in production: `20260830160046_remediate_untracked_rls_helper.sql` and `20260830194920_wave2_application_schema.sql`.
 - The untracked `ensure_rls` event trigger and `public.rls_auto_enable()` function are absent locally and remotely. A fresh reset and all 120 pgTAP assertions pass. Production has all 11 application tables with RLS enabled, zero `anon` application-table grants, and 38 operation-specific `authenticated` policies matching the reviewed migration.
 - Local and production error-level database lint pass. Production security advisors have no findings. The local post-pgTAP advisor run has three documented informational unused-index notices; the new empty production schema reports 18 informational unused-index notices and no security/error finding.
-- Vercel's Git integration automatically deployed current `main`. The homepage is healthy; `/daily` redirects to `/login?reason=configuration` because browser-safe Supabase URL/publishable-key values remain unconfigured under their separate production configuration gate.
+- Under explicit A5 approval, Vercel Production now contains `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` only; no privileged Supabase key was added. Under explicit A9 approval, Vercel rebuilt the existing Git-integrated production artifact after that configuration change. The deployment is Ready, `/` returns 200, and unauthenticated `/daily` redirects to `/login` (not `?reason=configuration`). No real user, production application data, or Supabase configuration was changed.
 - The Vercel CLI session was signed out and reauthenticated after credential-hygiene remediation. No credential value belongs in repository documentation or command output.
 - The Cloudflare Worker skeleton is configured for staging and production names and has passed dry runs. No Worker, Cron Trigger, or Turnstile widget has been created remotely.
 - Vercel's Git integration deploys `main`, but repository CI workflows have not been added yet.
 - Resend and production email are not configured. No real email or real-user creation has been authorized.
-- Completed external scopes: remediation migration, `main` push, baseline production deployment, and A2 application of only `20260830194920_wave2_application_schema.sql`. Later remote migrations/configuration, secrets, resources, pushes, and deployments still require their applicable one-time gates.
+- Completed external scopes: remediation migration, `main` push, baseline production deployment, A2 application of only `20260830194920_wave2_application_schema.sql`, A5 configuration of only the two browser-safe Vercel Supabase values, and A9 rebuild of the existing production artifact. These approvals are narrow and complete; later migrations, configuration, secrets, resources, pushes, and deployments still require their applicable one-time gates.
 
 Focused current-state guides:
 
