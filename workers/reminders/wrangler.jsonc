@@ -1,0 +1,21 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "gyst-reminders",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-29",
+  "account_id": "ed685203e1b5ec469e54c751753fe5b5",
+  "observability": {
+    "enabled": true
+  },
+  "env": {
+    "staging": {
+      "name": "gyst-reminders-staging"
+    },
+    "production": {
+      "name": "gyst-reminders"
+    }
+  }
+
+  // The production Cron Trigger is intentionally omitted until approval gate A4.
+  // Provider credentials belong in encrypted Wrangler secrets, never in this file.
+}

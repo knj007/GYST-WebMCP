@@ -1,0 +1,23 @@
+# Dependencies and build output
+node_modules/
+.next/
+out/
+coverage/
+playwright-report/
+test-results/
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Provider-local state
+.vercel/
+.wrangler/
+.dev.vars
+supabase/.temp/
+supabase/.branches/
+
+# Operating-system files
+.DS_Store
+Thumbs.db
