@@ -11,7 +11,7 @@ Status: production database foundation deployed; product and submission evidence
 - Removal of the untracked hosted RLS helper and event trigger.
 - Approved production application of the 11-table Wave 2 schema with RLS enabled, no `anon` table privileges, and operation-specific authenticated policies.
 - Fresh local reset and all 120 pgTAP assertions pass; local and production error-level lint pass; production security advisors have no findings.
-- Healthy production homepage at `https://gyst-web-mcp.vercel.app` on current `main` (`369733b`).
+- Healthy production homepage at `https://gyst-web-mcp.vercel.app` on the application release baseline (`369733b`).
 - Authenticated daily and weekly route shells exist, but production `/daily` intentionally redirects to configuration because browser-safe Supabase values are not yet configured.
 - Local-only reminder Worker skeleton with successful dry runs.
 - Ownership and approval rules recorded in `AGENTS.md` and the execution runbook.

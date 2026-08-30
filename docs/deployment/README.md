@@ -16,14 +16,14 @@ Last verified: 2026-08-30
 | Output directory | Next.js default |
 | Node.js | 24.x |
 | Production URL | `https://gyst-web-mcp.vercel.app` |
-| Current `main` / release commit | `369733b0f6eb50c1d9cf606b09b2e0a1c0b5b8ad` |
+| Application release baseline | `369733b0f6eb50c1d9cf606b09b2e0a1c0b5b8ad` (before this documentation update) |
 | Historical foundation deployment | `dpl_6mmxpMFXaSvFoH1xxHJf2zTzPUgJ` at `b6ba3ea27f862b2347b0eaaeb3af0ef1cbd7eb4c` |
 
 The first Git-triggered build compiled successfully but failed packaging because the project used the `Other` framework preset and resolved its output directory to `public`. The project was corrected to the Next.js preset with automatic output detection, and the exact reviewed commit was redeployed successfully.
 
 Current production state:
 
-- Vercel automatically deployed `main` at `369733b0f6eb50c1d9cf606b09b2e0a1c0b5b8ad`.
+- Vercel automatically deployed the application baseline at `369733b0f6eb50c1d9cf606b09b2e0a1c0b5b8ad`.
 - `/` — healthy production homepage.
 - `/daily` — redirects to `/login?reason=configuration`.
 - The redirect is expected: `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` remain unconfigured in production. They are browser-safe values, but writing them is a separate A5 production-configuration approval and is not part of A2.

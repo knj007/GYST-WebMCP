@@ -4,7 +4,7 @@ GYST is a human-owned daily and weekly ritual ledger. The application can read b
 
 ## Current checkpoint
 
-Current `main` and the GitHub release branch resolve to `369733b0f6eb50c1d9cf606b09b2e0a1c0b5b8ad`. The approved Wave 2 migration is now present in production; Vercel's Git integration has deployed `main` without changing any production environment configuration:
+The application release baseline before this documentation update is `369733b0f6eb50c1d9cf606b09b2e0a1c0b5b8ad`. The approved Wave 2 migration is now present in production; Vercel's Git integration deployed that application commit without changing any production environment configuration:
 
 - Production: <https://gyst-web-mcp.vercel.app>
 - Next.js App Router: public landing/sign-in plus request-dynamic authenticated `/daily` and `/weekly` shells
