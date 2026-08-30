@@ -1,11 +1,15 @@
 import type { ReactNode } from "react";
 
-import { SiteHeader } from "@/components/site-header";
+import { AuthenticatedHeader } from "@/components/authenticated-header";
+import { getCurrentProfile } from "@/lib/auth/session";
 
-export default function RitualLayout({ children }: { children: ReactNode }) {
+export default async function RitualLayout({ children }: { children: ReactNode }) {
+  const { identity, profile } = await getCurrentProfile();
+  const displayName = profile?.display_name ?? identity.email ?? "Signed in";
+
   return (
     <div className="min-h-screen">
-      <SiteHeader />
+      <AuthenticatedHeader displayName={displayName} />
       <main className="mx-auto max-w-4xl px-6 py-12">{children}</main>
     </div>
   );

@@ -4,15 +4,17 @@ GYST is a human-owned daily and weekly ritual ledger. The application can read b
 
 ## Current checkpoint
 
-The reproducible application and provider foundation is complete and deployed from commit `b6ba3ea` on `main`:
+The deployed baseline remains commit `b6ba3ea` on `main`. The current local worktree has advanced through the Wave 2 foundation without changing any remote resource:
 
 - Production: <https://gyst-web-mcp.vercel.app>
-- Next.js App Router routes: `/`, `/daily`, and `/weekly`
-- Local Supabase: Postgres 17 with one tested remediation migration
-- Hosted Supabase: migration history matches local and security advisors are clean
+- Next.js App Router: public landing/sign-in plus request-dynamic authenticated `/daily` and `/weekly` shells
+- Supabase clients: pinned browser/server SSR clients using only the publishable key, cookie refresh in Proxy, and centralized `getClaims()` authorization
+- Local Supabase: Postgres 17 with the remediation migration plus the 11-table Wave 2 ledger schema
+- Local database evidence: fresh reset, 114 pgTAP assertions, error-level lint, and security advisors pass
+- Hosted Supabase: remediation migration only; the Wave 2 schema remains local pending an A2 evidence packet and explicit approval
 - Reminder Worker: local skeleton and successful Wrangler dry runs only
 
-The deployed application is currently a static product shell. The application schema, authentication, RLS ownership policies, ritual forms, WebMCP tools, reminders, Turnstile, and Resend integration still need to be built.
+The daily/weekly ritual forms, atomic human commit, WebMCP tools, reminders, Turnstile, Resend, and demo ledger still need to be built. The production site remains the earlier static shell until a separately approved release.
 
 ## Local development
 
