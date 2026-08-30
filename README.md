@@ -10,7 +10,7 @@ The deployed baseline remains commit `b6ba3ea` on `main`. The current local work
 - Next.js App Router: public landing/sign-in plus request-dynamic authenticated `/daily` and `/weekly` shells
 - Supabase clients: pinned browser/server SSR clients using only the publishable key, cookie refresh in Proxy, and centralized `getClaims()` authorization
 - Local Supabase: Postgres 17 with the remediation migration plus the 11-table Wave 2 ledger schema
-- Local database evidence: fresh reset, 114 pgTAP assertions, error-level lint, and security advisors pass
+- Local database evidence: fresh reset, 120 pgTAP assertions, error-level lint, and security advisors pass
 - Hosted Supabase: remediation migration only; the Wave 2 schema remains local pending an A2 evidence packet and explicit approval
 - Reminder Worker: local skeleton and successful Wrangler dry runs only
 

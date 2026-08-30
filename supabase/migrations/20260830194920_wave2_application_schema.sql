@@ -40,6 +40,23 @@ begin
 end;
 $$;
 
+create function gyst_private.mark_account_deletion()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+declare
+  marked_user_ids text := current_setting('gyst.account_deletion_user_ids', true);
+begin
+  perform set_config(
+    'gyst.account_deletion_user_ids',
+    concat_ws(',', nullif(marked_user_ids, ''), old.id::text),
+    true
+  );
+  return old;
+end;
+$$;
+
 create function gyst_private.preserve_stable_identity()
 returns trigger
 language plpgsql
@@ -59,6 +76,15 @@ language plpgsql
 set search_path = ''
 as $$
 begin
+  if tg_op = 'DELETE'
+    and pg_trigger_depth() > 1
+    and old.user_id::text = any (
+      string_to_array(coalesce(current_setting('gyst.account_deletion_user_ids', true), ''), ',')
+    )
+  then
+    return old;
+  end if;
+
   if old.status = 'committed'::public.ritual_status then
     raise exception 'committed ritual sessions are immutable' using errcode = '23514';
   end if;
@@ -75,6 +101,15 @@ declare
   source_session_status public.ritual_status;
   target_session_status public.ritual_status;
 begin
+  if tg_op = 'DELETE'
+    and pg_trigger_depth() > 1
+    and old.user_id::text = any (
+      string_to_array(coalesce(current_setting('gyst.account_deletion_user_ids', true), ''), ',')
+    )
+  then
+    return old;
+  end if;
+
   if tg_op in ('UPDATE', 'DELETE') then
     select session.status
       into source_session_status
@@ -109,15 +144,32 @@ language plpgsql
 set search_path = ''
 as $$
 begin
+  if tg_op = 'DELETE'
+    and pg_trigger_depth() > 1
+    and old.user_id::text = any (
+      string_to_array(coalesce(current_setting('gyst.account_deletion_user_ids', true), ''), ',')
+    )
+  then
+    return old;
+  end if;
+
   raise exception 'append-only ledger events cannot be changed' using errcode = '23514';
 end;
 $$;
 
 revoke execute on function gyst_private.set_updated_at() from public, anon, authenticated;
+revoke execute on function gyst_private.mark_account_deletion() from public, anon, authenticated;
 revoke execute on function gyst_private.preserve_stable_identity() from public, anon, authenticated;
 revoke execute on function gyst_private.guard_ritual_session_mutation() from public, anon, authenticated;
 revoke execute on function gyst_private.guard_ritual_entry_mutation() from public, anon, authenticated;
 revoke execute on function gyst_private.guard_append_only_event() from public, anon, authenticated;
+
+-- Mark the transaction before Auth cascades begin. Immutable-ledger guards use
+-- both this user-id marker and nested trigger depth, so ordinary or privileged
+-- standalone deletes remain blocked while whole-account deletion can complete.
+create trigger gyst_mark_account_deletion
+before delete on auth.users
+for each row execute function gyst_private.mark_account_deletion();
 
 create table public.profiles (
   id uuid primary key default gen_random_uuid(),
@@ -569,7 +621,11 @@ with check ((select auth.uid()) = user_id and status = 'draft' and committed_at 
 create policy ritual_sessions_update_own_draft on public.ritual_sessions
 for update to authenticated
 using ((select auth.uid()) = user_id and status = 'draft')
-with check ((select auth.uid()) = user_id);
+with check (
+  (select auth.uid()) = user_id
+  and status = 'draft'
+  and committed_at is null
+);
 create policy ritual_sessions_delete_own_draft on public.ritual_sessions
 for delete to authenticated
 using ((select auth.uid()) = user_id and status = 'draft');

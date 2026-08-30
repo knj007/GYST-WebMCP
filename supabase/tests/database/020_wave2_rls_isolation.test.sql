@@ -1,6 +1,6 @@
 begin;
 
-select plan(95);
+select plan(101);
 
 -- Fixed fictional identities make failures reproducible without creating real users.
 insert into auth.users (id, email)
@@ -152,6 +152,7 @@ select throws_ok($$insert into public.commitment_events (user_id, commitment_id,
 select throws_ok($$insert into public.reminder_rules (user_id, ritual_session_id, ritual_kind, cadence, local_time, timezone, next_run_at) values ('11111111-1111-4111-8111-111111111111', 'a5000000-0000-4000-8000-000000000001', 'weekly', 'daily', '09:00', 'UTC', '2026-09-01 09:00+00')$$, '23503', null::text, 'ritual reminder kind must match its session kind');
 select throws_ok($$insert into public.reminder_rules (user_id, ritual_session_id, ritual_kind, cadence, local_time, timezone, next_run_at) values ('11111111-1111-4111-8111-111111111111', 'b5000000-0000-4000-8000-000000000001', 'daily', 'daily', '09:00', 'UTC', '2026-09-01 09:00+00')$$, '23503', null::text, 'reminder cannot link to another user session');
 select throws_ok($$insert into public.ritual_sessions (user_id, kind, period_start, status, committed_at) values ('11111111-1111-4111-8111-111111111111', 'daily', '2026-08-30', 'committed', now())$$, '42501', null::text, 'authenticated client cannot insert an already committed session');
+select throws_ok($$update public.ritual_sessions set status = 'committed', committed_at = now(), version = version + 1 where id = 'a5000000-0000-4000-8000-000000000003'$$, '42501', null::text, 'authenticated client cannot bypass the future atomic commit path');
 
 -- Owner CRUD succeeds where the table is intentionally mutable.
 select lives_ok($$update public.profiles set display_name = 'Owner A updated', version = version + 1 where user_id = '11111111-1111-4111-8111-111111111111'$$, 'owner can update own profile');
@@ -201,10 +202,37 @@ reset role;
 select throws_ok($$update public.ritual_sessions set version = version + 1 where id = 'a5000000-0000-4000-8000-000000000001'$$, '23514', null::text, 'trigger defense rejects privileged rewrites of committed sessions');
 select throws_ok($$update public.daily_entries set ritual_session_id = 'a5000000-0000-4000-8000-000000000003' where id = 'a6000000-0000-4000-8000-000000000001'$$, '23514', null::text, 'trigger defense rejects privileged reparenting away from a committed session');
 select throws_ok($$update public.commitment_events set title_snapshot = 'rewritten' where id = 'a8000000-0000-4000-8000-000000000001'$$, '23514', null::text, 'trigger defense rejects privileged rewrites of append-only events');
+select set_config('gyst.account_deletion_user_ids', '11111111-1111-4111-8111-111111111111', true);
+select throws_ok($$delete from public.ritual_sessions where id = 'a5000000-0000-4000-8000-000000000001'$$, '23514', null::text, 'trigger defense rejects privileged standalone deletes of committed sessions');
+select throws_ok($$delete from public.commitment_events where id = 'a8000000-0000-4000-8000-000000000001'$$, '23514', null::text, 'trigger defense rejects privileged standalone deletes of append-only events');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
 select throws_ok($$update public.areas set id = 'a1000000-0000-4000-8000-000000000002' where id = 'a1000000-0000-4000-8000-000000000001'$$, '23514', null::text, 'stable identifiers cannot be changed');
+
+reset role;
+select lives_ok($$delete from auth.users where id = '11111111-1111-4111-8111-111111111111'$$, 'whole-account deletion can cascade through committed and append-only ledger rows');
+select is(
+  (
+    select count(*)
+    from (
+      select user_id from public.profiles where user_id = '11111111-1111-4111-8111-111111111111'
+      union all select user_id from public.areas where user_id = '11111111-1111-4111-8111-111111111111'
+      union all select user_id from public.goals where user_id = '11111111-1111-4111-8111-111111111111'
+      union all select user_id from public.key_dates where user_id = '11111111-1111-4111-8111-111111111111'
+      union all select user_id from public.commitments where user_id = '11111111-1111-4111-8111-111111111111'
+      union all select user_id from public.ritual_sessions where user_id = '11111111-1111-4111-8111-111111111111'
+      union all select user_id from public.daily_entries where user_id = '11111111-1111-4111-8111-111111111111'
+      union all select user_id from public.weekly_entries where user_id = '11111111-1111-4111-8111-111111111111'
+      union all select user_id from public.commitment_events where user_id = '11111111-1111-4111-8111-111111111111'
+      union all select user_id from public.reminder_rules where user_id = '11111111-1111-4111-8111-111111111111'
+      union all select user_id from public.notification_events where user_id = '11111111-1111-4111-8111-111111111111'
+    ) as owned_rows
+  ),
+  0::bigint,
+  'whole-account deletion removes every owned application row'
+);
+select is((select count(*) from public.profiles where user_id = '22222222-2222-4222-8222-222222222222'), 1::bigint, 'whole-account deletion does not affect another owner');
 
 select * from finish();
 

@@ -46,7 +46,9 @@ The Data API surface is explicit:
 - `notification_events` are read-only for `authenticated`; the later reminder worker will use a narrow server-side claim/reconciliation path.
 - All policies are operation-specific. Updates have both `USING` and `WITH CHECK` predicates.
 
-Authenticated users may create only draft ritual sessions. Draft daily and weekly entries may be edited while their parent session is a draft. After a session is committed, RLS and private trigger functions prevent the session and its entry from being updated or deleted. Stable IDs and ownership columns cannot be changed.
+Authenticated users may create only draft ritual sessions, and ordinary updates must leave them in draft state with no commit timestamp. The future human-only commit transaction will own the validated draft-to-committed transition. Draft daily and weekly entries may be edited while their parent session is a draft. After a session is committed, RLS and private trigger functions prevent the session and its entry from being updated or deleted. Stable IDs and ownership columns cannot be changed.
+
+Whole-account deletion remains possible through the `auth.users` cascade. A private Auth deletion trigger marks the affected user IDs transaction-locally, and immutable-ledger guards accept deletes only when both that marker and nested trigger depth prove the delete is part of the cascade. Standalone privileged deletes remain rejected even if the marker is spoofed.
 
 Indexes cover every foreign-key prefix, every `user_id` RLS filter, bounded weekly lookups, approaching key dates, commitment-event history, due reminder rules, and notification reconciliation paths.
 
@@ -59,7 +61,7 @@ supabase db reset
 Result: PASS; both tracked migrations replayed and the intentionally empty seed applied.
 
 supabase test db --local
-Result: PASS; 3 files, 114 assertions.
+Result: PASS; 3 files, 120 assertions.
 
 supabase db lint --local --level error --fail-on error
 Result: PASS; no schema errors.
@@ -87,8 +89,10 @@ The pgTAP suites prove:
 - cross-user inserts and cross-owner parent links are denied;
 - valid owner CRUD succeeds only on the intended table operations;
 - authenticated clients cannot insert already-committed sessions or manufacture/rewrite delivery history;
+- authenticated clients cannot directly transition a draft session to committed;
 - committed daily/weekly sessions and entries are immutable;
 - append-only commitment events and stable identifiers have trigger-level defense in depth.
+- whole-account Auth deletion removes every owned row without weakening standalone immutable-ledger guards.
 
 No Wave 2 remote migration, provider configuration, secret write, user creation, push, or deployment occurred during this local database wave.
 
