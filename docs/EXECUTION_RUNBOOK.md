@@ -1,10 +1,12 @@
 # GYST WebMCP Execution Runbook
 
-Status: ready for execution after owner approval
+Status: execution in progress; local/provider foundation verified and deployed
 Prepared: 2026-08-29
+Last verified: 2026-08-30
 Submission target: 2026-09-03 at 1:00 p.m. Pacific / 3:00 p.m. Central
 Repository: `knj007/GYST-WebMCP`
 Supabase project: `knj007's Project` (`ztxuxbjimssuxkazawxr`, `us-east-2`)
+Production: `https://gyst-web-mcp.vercel.app`
 
 ## 1. Objective
 
@@ -29,7 +31,9 @@ The execution must preserve these non-negotiables:
 - Vercel hosts the Next.js application.
 - Cloudflare provides Turnstile and a stateless scheduled reminder Worker, not a second database.
 
-## 2. Authoritative starting state
+## 2. Authoritative starting state (historical)
+
+This section preserves the evidence available when the runbook was prepared. It is not the current project status; use section 2.1 and the focused guides under `docs/` for the latest verified state.
 
 Verified before this runbook was written:
 
@@ -49,6 +53,28 @@ Verified before this runbook was written:
 - The live Supabase project has no application tables and no migration history, but it is not pristine: `public.rls_auto_enable()` is an externally callable `SECURITY DEFINER` function, and the enabled `ensure_rls` DDL event trigger calls it. Supabase security advisors currently report two external-facing warnings. The first reviewed migration must remove this untracked helper/trigger and replace it with explicit table-by-table RLS.
 
 The earlier product plan remains the product specification. This runbook is the execution/control layer and does not replace the product decisions in that plan.
+
+### 2.1 Current execution checkpoint — 2026-08-30
+
+- `main`, `origin/main`, and `origin/HEAD` all resolve to `b6ba3ea27f862b2347b0eaaeb3af0ef1cbd7eb4c`; the worktree was clean at the checkpoint.
+- The repository contains a strict TypeScript Next.js 16.3.3 App Router application with Tailwind, ESLint, Vitest, Playwright, a committed npm lockfile, and Node 24.x runtime metadata.
+- The application has a marketing page plus daily and weekly route shells. It does not yet contain the application schema, authentication, ritual forms, WebMCP tools, or ledger commit flows.
+- Docker Desktop and Supabase CLI 2.116.0 are available. The local Postgres 17 stack starts successfully with analytics disabled, and all core containers are running.
+- Migration `20260830160046_remediate_untracked_rls_helper.sql` is present locally and applied to the linked hosted project. Local and remote migration history match.
+- The untracked `ensure_rls` event trigger and `public.rls_auto_enable()` function are absent locally and remotely. pgTAP passes and hosted Supabase security advisors report no issues.
+- Vercel CLI authentication is verified as `knj007-7962`. Project `knj007/gyst-web-mcp` uses the Next.js preset, Node 24.x, repository root, and the Next.js default output directory.
+- Production deployment `dpl_6mmxpMFXaSvFoH1xxHJf2zTzPUgJ` serves commit `b6ba3ea` at `https://gyst-web-mcp.vercel.app`; `/`, `/daily`, and `/weekly` return HTTP 200.
+- The Vercel CLI session was signed out and reauthenticated after credential-hygiene remediation. No credential value belongs in repository documentation or command output.
+- The Cloudflare Worker skeleton is configured for staging and production names and has passed dry runs. No Worker, Cron Trigger, or Turnstile widget has been created remotely.
+- Vercel's Git integration deploys `main`, but repository CI workflows have not been added yet.
+- Resend and production email are not configured. No real email or real-user creation has been authorized.
+- The completed external scopes were explicitly approved: the first remediation migration, the `main` push, and the baseline production deployment. Later remote migrations/configuration, secrets, resources, pushes, and deployments still require their applicable one-time gates.
+
+Focused current-state guides:
+
+- `docs/database/README.md`
+- `docs/deployment/README.md`
+- `docs/submission/README.md`
 
 ## 3. Operating model
 
