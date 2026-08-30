@@ -1,4 +1,4 @@
-export interface Env {}
+export type Env = Record<string, never>;
 
 const worker: ExportedHandler<Env> = {
   async fetch(request) {
