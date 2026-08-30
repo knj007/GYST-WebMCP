@@ -16,14 +16,15 @@ Last verified: 2026-08-30
 | Output directory | Next.js default |
 | Node.js | 24.x |
 | Production URL | `https://gyst-web-mcp.vercel.app` |
-| Current `main` / production release | `04851f557d24d4c43d65106ba5f4beb302613191` |
+| GitHub `main` at this checkpoint | `c576e08d7a3151dc8cff7939ae56f347633f4263` (documentation-only PR #3 merge) |
+| Application activation baseline | `04851f557d24d4c43d65106ba5f4beb302613191` (A5/A9) |
 | Historical foundation deployment | `dpl_6mmxpMFXaSvFoH1xxHJf2zTzPUgJ` at `b6ba3ea27f862b2347b0eaaeb3af0ef1cbd7eb4c` |
 
 The first Git-triggered build compiled successfully but failed packaging because the project used the `Other` framework preset and resolved its output directory to `public`. The project was corrected to the Next.js preset with automatic output detection, and the exact reviewed commit was redeployed successfully.
 
 Current production state:
 
-- Vercel's Git integration deployed the application release at `04851f557d24d4c43d65106ba5f4beb302613191`; after the approved configuration change, Vercel rebuilt that existing production artifact successfully.
+- Vercel's Git integration produced a Ready production deployment after the `c576e08d7a3151dc8cff7939ae56f347633f4263` documentation-only merge. Its application behavior remains the A5/A9 activation baseline at `04851f557d24d4c43d65106ba5f4beb302613191`; after the approved configuration change, Vercel rebuilt that existing production artifact successfully.
 - `/` — healthy production homepage.
 - `/daily` — unauthenticated request redirects to `/login`.
 - Under the completed A5 gate, Production contains only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for this Supabase activation. They are browser-safe values; neither a service-role nor another privileged Supabase key was configured. The values themselves are not recorded here.
