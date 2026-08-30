@@ -1,0 +1,2 @@
+-- Intentionally empty during the foundation wave.
+-- Wave 4 will add fictional demo data only after the schema and RLS tests pass.
