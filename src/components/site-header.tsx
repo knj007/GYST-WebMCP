@@ -14,6 +14,9 @@ export function SiteHeader() {
           <Link className="transition-colors hover:text-foreground" href="/weekly">
             Weekly
           </Link>
+          <Link className="transition-colors hover:text-foreground" href="/login">
+            Sign in
+          </Link>
         </nav>
       </div>
     </header>
