@@ -4,17 +4,18 @@ GYST is a human-owned daily and weekly ritual ledger. The application can read b
 
 ## Current checkpoint
 
-The deployed baseline remains commit `b6ba3ea` on `main`. The current local worktree has advanced through the Wave 2 foundation without changing any remote resource:
+Current `main` and the GitHub release branch resolve to `369733b0f6eb50c1d9cf606b09b2e0a1c0b5b8ad`. The approved Wave 2 migration is now present in production; Vercel's Git integration has deployed `main` without changing any production environment configuration:
 
 - Production: <https://gyst-web-mcp.vercel.app>
 - Next.js App Router: public landing/sign-in plus request-dynamic authenticated `/daily` and `/weekly` shells
 - Supabase clients: pinned browser/server SSR clients using only the publishable key, cookie refresh in Proxy, and centralized `getClaims()` authorization
-- Local Supabase: Postgres 17 with the remediation migration plus the 11-table Wave 2 ledger schema
-- Local database evidence: fresh reset, 120 pgTAP assertions, error-level lint, and security advisors pass
-- Hosted Supabase: remediation migration only; the Wave 2 schema remains local pending an A2 evidence packet and explicit approval
+- Local and hosted Supabase: Postgres 17 with `20260830160046` remediation plus `20260830194920` Wave 2 application schema
+- Production ledger: 11 empty application tables, RLS enabled on every table, no `anon` application-table privileges, and operation-specific `authenticated` policies
+- Database evidence: fresh local reset, 120 pgTAP assertions, and local/production error-level lint all pass; production security advisors have no findings
+- Performance advisors: local post-pgTAP has three expected informational unused-index notices; the new, empty production schema has 18 informational unused-index notices and no security/error finding
 - Reminder Worker: local skeleton and successful Wrangler dry runs only
 
-The daily/weekly ritual forms, atomic human commit, WebMCP tools, reminders, Turnstile, Resend, and demo ledger still need to be built. The production site remains the earlier static shell until a separately approved release.
+The production homepage is healthy. `/daily` redirects to `/login?reason=configuration` because the browser-safe Supabase URL and publishable key have not been configured in Vercel; that configuration is a separate approval gate and has not been changed. The daily/weekly ritual forms, atomic human commit, WebMCP tools, reminders, Turnstile, Resend, and demo ledger still need to be built.
 
 ## Local development
 

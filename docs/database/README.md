@@ -7,17 +7,17 @@ Last verified: 2026-08-30
 - Hosted project: `knj007's Project` (`ztxuxbjimssuxkazawxr`, `us-east-2`)
 - PostgreSQL major version: 17 locally and remotely
 - Supabase CLI used for verification: 2.116.0
-- Local migration history: `20260830160046`, `20260830194920`
-- Remote migration history: `20260830160046` only; the Wave 2 application migration has not been pushed
-- Hosted security advisors: no warnings at the checkpoint
+- Local and remote migration history: `20260830160046`, `20260830194920`
+- Hosted security advisors: no findings
+- Hosted performance advisors: 18 informational unused-index notices on the brand-new empty schema; no security or error finding
 - Local application tables: 11 Wave 2 ledger tables with explicit RLS
-- Hosted application tables: none yet
+- Hosted application tables: the same 11 Wave 2 ledger tables, all empty and RLS-enabled
 
 The first migration removes the unversioned `ensure_rls` event trigger and `public.rls_auto_enable()` security-definer function. The accompanying pgTAP test proves that the trigger, function, and privileged implementation are absent.
 
 This migration is remediation only. It does not establish the GYST ledger schema or claim that application RLS is complete.
 
-The second local migration, `20260830194920_wave2_application_schema.sql`, establishes the application schema. It remains local until the owner reviews the complete A2 evidence packet and explicitly approves a remote migration.
+The second migration, `20260830194920_wave2_application_schema.sql`, establishes the application schema. It was applied to the linked hosted project under explicit A2 approval on 2026-08-30, after a dry run confirmed it was the only pending migration. The sanitized before/after evidence packet is [production-wave2-evidence-2026-08-30.md](production-wave2-evidence-2026-08-30.md).
 
 ## Wave 2 application contract
 
@@ -94,7 +94,7 @@ The pgTAP suites prove:
 - append-only commitment events and stable identifiers have trigger-level defense in depth.
 - whole-account Auth deletion removes every owned row without weakening standalone immutable-ledger guards.
 
-No Wave 2 remote migration, provider configuration, secret write, user creation, push, or deployment occurred during this local database wave.
+The local Wave 2 implementation did not mutate providers. After its evidence gate passed, the owner granted A2 approval for the single reviewed production migration. No provider configuration, secret write, user creation, production data insert, rollback, or RLS weakening occurred.
 
 ## Local workflow
 
@@ -135,6 +135,6 @@ Views must use `security_invoker` when exposed. Privileged functions must not be
 
 ## Remote boundary
 
-Linked migration listing, advisors, and bounded read-only queries are inspection operations. Any future `supabase db push`, hosted Auth/config change, schema mutation, secret write, real-user creation, or destructive operation requires the applicable approval gate in `docs/EXECUTION_RUNBOOK.md`.
+Linked migration listing, advisors, and bounded read-only queries are inspection operations. A2 is complete for the initial Wave 2 schema only. Any corrective or additional hosted migration, Auth/config change, schema mutation, secret write, real-user creation, production data write, or destructive operation requires the applicable new approval gate in `docs/EXECUTION_RUNBOOK.md`.
 
 Use forward-only corrective migrations for hosted changes. Never reset or rewrite the remote database to repair a release.

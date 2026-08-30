@@ -16,19 +16,20 @@ Last verified: 2026-08-30
 | Output directory | Next.js default |
 | Node.js | 24.x |
 | Production URL | `https://gyst-web-mcp.vercel.app` |
-| Baseline commit | `b6ba3ea27f862b2347b0eaaeb3af0ef1cbd7eb4c` |
-| Baseline deployment | `dpl_6mmxpMFXaSvFoH1xxHJf2zTzPUgJ` |
+| Current `main` / release commit | `369733b0f6eb50c1d9cf606b09b2e0a1c0b5b8ad` |
+| Historical foundation deployment | `dpl_6mmxpMFXaSvFoH1xxHJf2zTzPUgJ` at `b6ba3ea27f862b2347b0eaaeb3af0ef1cbd7eb4c` |
 
 The first Git-triggered build compiled successfully but failed packaging because the project used the `Other` framework preset and resolved its output directory to `public`. The project was corrected to the Next.js preset with automatic output detection, and the exact reviewed commit was redeployed successfully.
 
-Current smoke checks:
+Current production state:
 
-- `/` — HTTP 200
-- `/daily` — HTTP 200
-- `/weekly` — HTTP 200
-- Production error-log query — no errors found at the checkpoint
+- Vercel automatically deployed `main` at `369733b0f6eb50c1d9cf606b09b2e0a1c0b5b8ad`.
+- `/` — healthy production homepage.
+- `/daily` — redirects to `/login?reason=configuration`.
+- The redirect is expected: `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` remain unconfigured in production. They are browser-safe values, but writing them is a separate A5 production-configuration approval and is not part of A2.
+- Production Supabase now contains the two tracked migrations and 11 RLS-enabled, empty application tables. This changes the database foundation only; it does not make the ritual flows usable.
 
-The deployed routes are product-shell pages, not proof that the ledger, authentication, WebMCP, or reminder flows are complete.
+The deployed routes are an authenticated application shell, not proof that the daily/weekly ritual, human-only commit, WebMCP, reminder, or demo flows are complete.
 
 Vercel's Git integration is connected to `main`. The repository does not yet contain GitHub Actions or another independent CI workflow, so the current production evidence relies on local verification plus Vercel's build and status checks.
 
@@ -67,4 +68,4 @@ npm run worker:dry-run
 
 A production release packet must identify the exact commit, complete verification results, known issues, provider changes, and rollback target before approval. Git pushes, deployments, domains, secrets, remote provider configuration, Worker/Cron/Turnstile resources, and real email remain gated external writes.
 
-The current baseline deployment is the only known-good production foundation. Until a later release is proven, rollback means restoring deployment `dpl_6mmxpMFXaSvFoH1xxHJf2zTzPUgJ` and using forward-only database corrections. Never repair production by weakening RLS.
+The historical foundation deployment remains a rollback reference for application code. Database rollback is not allowed: use forward-only corrective migrations, and never repair production by weakening RLS.
