@@ -16,20 +16,22 @@ Last verified: 2026-08-30
 | Output directory | Next.js default |
 | Node.js | 24.x |
 | Production URL | `https://gyst-web-mcp.vercel.app` |
-| Application release baseline | `369733b0f6eb50c1d9cf606b09b2e0a1c0b5b8ad` (before this documentation update) |
+| Current `main` / production release | `04851f557d24d4c43d65106ba5f4beb302613191` |
 | Historical foundation deployment | `dpl_6mmxpMFXaSvFoH1xxHJf2zTzPUgJ` at `b6ba3ea27f862b2347b0eaaeb3af0ef1cbd7eb4c` |
 
 The first Git-triggered build compiled successfully but failed packaging because the project used the `Other` framework preset and resolved its output directory to `public`. The project was corrected to the Next.js preset with automatic output detection, and the exact reviewed commit was redeployed successfully.
 
 Current production state:
 
-- Vercel automatically deployed the application baseline at `369733b0f6eb50c1d9cf606b09b2e0a1c0b5b8ad`.
+- Vercel's Git integration deployed the application release at `04851f557d24d4c43d65106ba5f4beb302613191`; after the approved configuration change, Vercel rebuilt that existing production artifact successfully.
 - `/` — healthy production homepage.
-- `/daily` — redirects to `/login?reason=configuration`.
-- The redirect is expected: `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` remain unconfigured in production. They are browser-safe values, but writing them is a separate A5 production-configuration approval and is not part of A2.
+- `/daily` — unauthenticated request redirects to `/login`.
+- Under the completed A5 gate, Production contains only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for this Supabase activation. They are browser-safe values; neither a service-role nor another privileged Supabase key was configured. The values themselves are not recorded here.
 - Production Supabase now contains the two tracked migrations and 11 RLS-enabled, empty application tables. This changes the database foundation only; it does not make the ritual flows usable.
 
 The deployed routes are an authenticated application shell, not proof that the daily/weekly ritual, human-only commit, WebMCP, reminder, or demo flows are complete.
+
+The sanitized configuration and deployment evidence is in [production-a5-a9-evidence-2026-08-30.md](production-a5-a9-evidence-2026-08-30.md). A5 and A9 are complete only for the listed configuration and rebuild; future production configuration or deployments remain gated.
 
 Vercel's Git integration is connected to `main`. The repository does not yet contain GitHub Actions or another independent CI workflow, so the current production evidence relies on local verification plus Vercel's build and status checks.
 
