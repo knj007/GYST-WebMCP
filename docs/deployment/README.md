@@ -32,6 +32,8 @@ Current production state:
 
 The deployed routes are an authenticated application shell, not proof that the daily/weekly ritual, human-only commit, WebMCP, reminder, or demo flows are complete.
 
+The daily draft form and human-only atomic commit are current local Wave 3 work only. They have not been reviewed, merged, deployed, or paired with an A8 production migration approval; production remains the authenticated shell and empty Wave 2 ledger described above.
+
 The sanitized configuration and deployment evidence is in [production-a5-a9-evidence-2026-08-30.md](production-a5-a9-evidence-2026-08-30.md). A5 and A9 are complete only for the listed configuration and rebuild; future production configuration or deployments remain gated.
 
 Vercel's Git integration is connected to `main`. The repository does not yet contain GitHub Actions or another independent CI workflow, so the current production evidence relies on local verification plus Vercel's build and status checks.

@@ -608,7 +608,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      commit_daily_ritual: {
+        Args: {
+          p_expected_version: number
+          p_idempotency_key: string
+          p_ritual_session_id: string
+        }
+        Returns: {
+          committed_at: string
+          ritual_session_id: string
+          version: number
+        }[]
+      }
     }
     Enums: {
       area_status: "active" | "archived"

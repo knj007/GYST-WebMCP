@@ -9,13 +9,13 @@ At the 2026-08-30 documentation checkpoint, GitHub `main` resolved to `c576e08d7
 - Production: <https://gyst-web-mcp.vercel.app>
 - Next.js App Router: public landing/sign-in plus request-dynamic authenticated `/daily` and `/weekly` shells
 - Supabase clients: pinned browser/server SSR clients using only the publishable key, cookie refresh in Proxy, and centralized `getClaims()` authorization
-- Local and hosted Supabase: Postgres 17 with `20260830160046` remediation plus `20260830194920` Wave 2 application schema
+- Hosted Supabase: Postgres 17 with `20260830160046` remediation plus `20260830194920` Wave 2 application schema; the local Wave 3 branch additionally has the unreviewed `20260830211216_daily_ritual_commit` migration
 - Production ledger: 11 empty application tables, RLS enabled on every table, no `anon` application-table privileges, and operation-specific `authenticated` policies
-- Database evidence: fresh local reset, 120 pgTAP assertions, and local/production error-level lint all pass; production security advisors have no findings
+- Database evidence: the production Wave 2 gate passed at 120 pgTAP assertions; the current local Wave 3 reset passes 135 assertions and error-level lint, with no advisor security/error finding
 - Performance advisors: local post-pgTAP has three expected informational unused-index notices; the new, empty production schema has 18 informational unused-index notices and no security/error finding
 - Reminder Worker: local skeleton and successful Wrangler dry runs only
 
-The production homepage is healthy. `/daily` now redirects an unauthenticated visitor to `/login`, confirming that the application can read its browser-safe Supabase configuration; no real user was created or signed in for this check. The daily/weekly ritual forms, atomic human commit, WebMCP tools, reminders, Turnstile, Resend, and demo ledger still need to be built. See [the production activation evidence](docs/deployment/production-a5-a9-evidence-2026-08-30.md) for the sanitized A5/A9 record.
+The production homepage is healthy. `/daily` now redirects an unauthenticated visitor to `/login`, confirming that the application can read its browser-safe Supabase configuration; no real user was created or signed in for this check. The current local Wave 3 branch adds the ordinary daily draft form and a `SECURITY INVOKER` atomic human commit RPC; neither has been reviewed, merged, or applied to production. Weekly ritual, WebMCP draft tools, reminders, Turnstile, Resend, and demo ledger still need to be built. See [the production activation evidence](docs/deployment/production-a5-a9-evidence-2026-08-30.md) for the sanitized A5/A9 record.
 
 ## Local development
 
