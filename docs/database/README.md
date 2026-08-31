@@ -7,7 +7,8 @@ Last verified: 2026-08-30
 - Hosted project: `knj007's Project` (`ztxuxbjimssuxkazawxr`, `us-east-2`)
 - PostgreSQL major version: 17 locally and remotely
 - Supabase CLI used for verification: 2.116.0
-- Local and remote migration history: `20260830160046`, `20260830194920`
+- Hosted migration history: `20260830160046`, `20260830194920`
+- Current local Wave 3 migration history: `20260830160046`, `20260830194920`, `20260830211216`, `20260831032428` (the Wave 3 migrations are unreviewed and not hosted)
 - Hosted security advisors: no findings
 - Hosted performance advisors: 18 informational unused-index notices on the brand-new empty schema; no security or error finding
 - Local application tables: 11 Wave 2 ledger tables with explicit RLS
@@ -18,6 +19,8 @@ The first migration removes the unversioned `ensure_rls` event trigger and `publ
 This migration is remediation only. It does not establish the GYST ledger schema or claim that application RLS is complete.
 
 The second migration, `20260830194920_wave2_application_schema.sql`, establishes the application schema. It was applied to the linked hosted project under explicit A2 approval on 2026-08-30, after a dry run confirmed it was the only pending migration. The sanitized before/after evidence packet is [production-wave2-evidence-2026-08-30.md](production-wave2-evidence-2026-08-30.md).
+
+The current local Wave 3 migrations, `20260830211216_daily_ritual_commit.sql` and `20260831032428_enforce_commit_expected_version.sql`, add atomic daily draft-save and close transactions, then ensure a missing commit version is rejected as stale. Both are explicitly `SECURITY INVOKER`, retain normal RLS evaluation, and grant `EXECUTE` only to `authenticated`. The owner selected an application/WebMCP capability boundary: WebMCP has no commit tool, while the database validates every authenticated owner daily close and appends its matching stable outcome event in the same transaction. Focused database/security review is approved, but the migrations remain local only and must not be applied to the hosted project without a new A8 gate.
 
 ## Wave 2 application contract
 
@@ -46,22 +49,22 @@ The Data API surface is explicit:
 - `notification_events` are read-only for `authenticated`; the later reminder worker will use a narrow server-side claim/reconciliation path.
 - All policies are operation-specific. Updates have both `USING` and `WITH CHECK` predicates.
 
-Authenticated users may create only draft ritual sessions, and ordinary updates must leave them in draft state with no commit timestamp. The future human-only commit transaction will own the validated draft-to-committed transition. Draft daily and weekly entries may be edited while their parent session is a draft. After a session is committed, RLS and private trigger functions prevent the session and its entry from being updated or deleted. Stable IDs and ownership columns cannot be changed.
+Authenticated users may create only draft ritual sessions, and ordinary updates must leave them in draft state with no commit timestamp except for a complete daily close. The local daily flow validates required fields and an active owner-owned next commitment at the trigger-level ledger boundary, appends the stable outcome event atomically, and marks the session committed. Draft daily saves write the session version and entry in one optimistic transaction. WebMCP remains limited by its draft-only tool contract rather than an unforgeable database claim about human origin. Draft daily and weekly entries may be edited while their parent session is a draft. After a session is committed, RLS and private trigger functions prevent the session and its entry from being updated or deleted. Stable IDs and ownership columns cannot be changed.
 
 Whole-account deletion remains possible through the `auth.users` cascade. A private Auth deletion trigger marks the affected user IDs transaction-locally, and immutable-ledger guards accept deletes only when both that marker and nested trigger depth prove the delete is part of the cascade. Standalone privileged deletes remain rejected even if the marker is spoofed.
 
 Indexes cover every foreign-key prefix, every `user_id` RLS filter, bounded weekly lookups, approaching key dates, commitment-event history, due reminder rules, and notification reconciliation paths.
 
-## Wave 2 local evidence
+## Local Wave 2 evidence and Wave 3 results
 
 Verified on 2026-08-30 with Supabase CLI 2.116.0:
 
 ```text
-supabase db reset
-Result: PASS; both tracked migrations replayed and the intentionally empty seed applied.
+supabase db reset --local --no-seed
+Result: PASS; all three local migrations replayed.
 
 supabase test db --local
-Result: PASS; 3 files, 120 assertions.
+Result: PASS; 4 files, 157 assertions.
 
 supabase db lint --local --level error --fail-on error
 Result: PASS; no schema errors.
@@ -73,11 +76,13 @@ dates, due reminder claims, and notification claims. Those future worker/query
 paths are retained; representative application traffic does not exist yet.
 
 supabase migration list --local
-Result: PASS; local migrations 20260830160046 and 20260830194920 are applied.
+Result: PASS; local migrations 20260830160046, 20260830194920, 20260830211216, and 20260831032428 are applied. Hosted Supabase remains at the first two only.
 
 supabase gen types typescript --local --schema public
-Result: PASS; src/lib/db/database.types.ts regenerated from the final local schema.
+Result: PASS; the generated local `commit_daily_ritual` RPC signature matches the checked-in `src/lib/db/database.types.ts` update.
 ```
+
+The completed local application evidence is separate from pgTAP: `npm test` passes 5 Vitest files / 15 tests, including focused Server Action errors and idempotent retry behavior; `npm run test:e2e` passes 2 Playwright tests. The authenticated browser test provisions only `gyst-local-ritual-e2e@example.test` against the verified local API URL, creates one local fixture commitment, and deletes that exact local Auth identity in teardown. It covers sign-in, draft save, reload/resume, ordinary human commit, and committed-state reload. The source contract also proves that `src/lib/webmcp` does not exist yet and `saveDailyDraft` has no commit-RPC reference. Focused application/WebMCP and database/security reviews are approved; W3 may be considered for a PR, but not an A8 gate.
 
 The pgTAP suites prove:
 
@@ -89,7 +94,9 @@ The pgTAP suites prove:
 - cross-user inserts and cross-owner parent links are denied;
 - valid owner CRUD succeeds only on the intended table operations;
 - authenticated clients cannot insert already-committed sessions or manufacture/rewrite delivery history;
-- authenticated clients cannot directly transition a draft session to committed;
+- authenticated clients cannot directly commit an incomplete, cross-owner, or non-daily draft; a complete owned daily session may close only through the reviewed normal application/database path;
+- authenticated daily draft-save and close RPCs are `SECURITY INVOKER`; draft writes are atomic and stale-safe, daily close validates required fields and an active owner-owned next commitment, and idempotent replay does not create a duplicate close event;
+- WebMCP's human-only boundary is its draft-only capability contract, not a database attempt to classify the origin of authenticated owner SQL;
 - committed daily/weekly sessions and entries are immutable;
 - append-only commitment events and stable identifiers have trigger-level defense in depth.
 - whole-account Auth deletion removes every owned row without weakening standalone immutable-ledger guards.

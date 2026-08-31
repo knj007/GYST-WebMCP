@@ -58,11 +58,11 @@ The earlier product plan remains the product specification. This runbook is the 
 
 - Before PR #4, GitHub `main` resolved to `c576e08d7a3151dc8cff7939ae56f347633f4263`, a documentation-only merge. The deployed application's A5/A9 activation baseline is `04851f557d24d4c43d65106ba5f4beb302613191`. The earlier `369733b0f6eb50c1d9cf606b09b2e0a1c0b5b8ad` database/application baseline and the foundation deployment at `b6ba3ea` are historical evidence only.
 - The repository contains a strict TypeScript Next.js 16.3.3 App Router application with Tailwind, ESLint, Vitest, Playwright, a committed npm lockfile, and Node 24.x runtime metadata.
-- The application has a marketing page, sign-in flow, Supabase SSR clients, centralized `getClaims()` authorization, and request-dynamic authenticated daily/weekly route shells. It does not yet contain the ritual forms, atomic human-only commit, WebMCP tools, reminders, or demo ledger.
+- The application has a marketing page, sign-in flow, Supabase SSR clients, centralized `getClaims()` authorization, and request-dynamic authenticated daily/weekly route shells. The current local Wave 3 branch adds the ordinary daily draft form, atomic draft-save RPC, and validated commit action. Its human-only boundary is the application/WebMCP capability contract: WebMCP has no commit tool. Weekly ritual, WebMCP tools, reminders, and demo ledger remain unfinished.
 - Docker Desktop and Supabase CLI 2.116.0 are available. The local Postgres 17 stack starts successfully with analytics disabled, and all core containers are running.
-- Both tracked migrations are present locally and in production: `20260830160046_remediate_untracked_rls_helper.sql` and `20260830194920_wave2_application_schema.sql`.
-- The untracked `ensure_rls` event trigger and `public.rls_auto_enable()` function are absent locally and remotely. A fresh reset and all 120 pgTAP assertions pass. Production has all 11 application tables with RLS enabled, zero `anon` application-table grants, and 38 operation-specific `authenticated` policies matching the reviewed migration.
-- Local and production error-level database lint pass. Production security advisors have no findings. The local post-pgTAP advisor run has three documented informational unused-index notices; the new empty production schema reports 18 informational unused-index notices and no security/error finding.
+- Production contains only the two tracked Wave 2 migrations: `20260830160046_remediate_untracked_rls_helper.sql` and `20260830194920_wave2_application_schema.sql`. The current local Wave 3 branch adds reviewed-but-local-only `20260830211216_daily_ritual_commit.sql` and `20260831032428_enforce_commit_expected_version.sql`; they are not remote-migration candidates without a new A8 evidence gate.
+- The untracked `ensure_rls` event trigger and `public.rls_auto_enable()` function are absent locally and remotely. The Wave 2 production gate passed at 120 pgTAP assertions. The local Wave 3 reset passes 157 pgTAP assertions, including atomic draft save/rollback, missing/stale-version rejection, validated daily close, cross-owner denial, and idempotent replay. The application evidence now passes 5 Vitest files / 15 tests and 2 Playwright tests: a guarded fictional local identity signs in, saves and resumes a draft, commits through the ordinary form, and sees the committed state after refresh; teardown removes that exact local account. A source-level negative contract proves no `src/lib/webmcp` tool surface exists and the draft action does not invoke the commit RPC. Focused application/WebMCP and database/security reviews are approved, completing the local W3 evidence gate. Production remains at the verified 11 RLS-enabled application tables, zero `anon` application-table grants, and 38 operation-specific `authenticated` policies.
+- Local and production error-level database lint pass. The Wave 3 local advisors report no security or error-level finding; three informational unused-index notices remain. Production security advisors have no findings, while the new empty production schema reports 18 informational unused-index notices and no security/error finding.
 - Under explicit A5 approval, Vercel Production now contains `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` only; no privileged Supabase key was added. Under explicit A9 approval, Vercel rebuilt the existing Git-integrated production artifact after that configuration change. The deployment is Ready, `/` returns 200, and unauthenticated `/daily` redirects to `/login` (not `?reason=configuration`). No real user, production application data, or Supabase configuration was changed.
 - The Vercel CLI session was signed out and reauthenticated after credential-hygiene remediation. No credential value belongs in repository documentation or command output.
 - The Cloudflare Worker skeleton is configured for staging and production names and has passed dry runs. No Worker, Cron Trigger, or Turnstile widget has been created remotely.
@@ -474,6 +474,8 @@ Deliverables:
 6. Committed sessions cannot be mutated through draft services.
 7. Normal form works without WebMCP or JavaScript site-tool support.
 
+Current implementation status: the owner selected the narrower, explicit application/WebMCP capability guarantee. WebMCP must expose draft-only tools and no commit tool; an authenticated owner may use the normal application/database path. The local migration validates every daily draft-to-committed transition, appends the matching stable outcome event in the same transaction, and keeps the result immutable. It uses `SECURITY INVOKER` and normal RLS, not a `SECURITY DEFINER` permission workaround. Do not apply or promote this unreviewed migration without the W3 evidence and a new production approval.
+
 Evidence gate W3:
 
 - Unit tests cover daily rules and blocker typing.
@@ -481,6 +483,8 @@ Evidence gate W3:
 - Transaction tests prove atomicity and idempotency.
 - E2E test signs in, completes a day, refreshes, and sees committed data.
 - A code search confirms no WebMCP or server action can bypass the human commit path.
+
+Current local W3 evidence: complete. The ordinary form is tested with no WebMCP implementation present; the only application call to `commit_daily_ritual` remains the named normal human `commitDailyRitual` server action. Focused application/WebMCP and database/security reviews approved this evidence. A PR may be considered under the normal Git workflow, but any A8 production-migration gate still requires a new explicit owner approval.
 
 ### Wave 4 — Weekly context, patterns, and demo ledger
 

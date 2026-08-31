@@ -608,7 +608,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      commit_daily_ritual: {
+        Args: { p_expected_version: number; p_ritual_session_id: string }
+        Returns: {
+          committed_at: string
+          ritual_session_id: string
+          version: number
+        }[]
+      }
+      save_daily_ritual_draft: {
+        Args: {
+          p_draft: Json
+          p_expected_session_version?: number
+          p_period_start: string
+        }
+        Returns: {
+          ritual_session_id: string
+          status: Database["public"]["Enums"]["ritual_status"]
+          version: number
+        }[]
+      }
     }
     Enums: {
       area_status: "active" | "archived"

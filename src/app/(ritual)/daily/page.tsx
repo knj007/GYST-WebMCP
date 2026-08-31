@@ -1,7 +1,8 @@
-import { getRitualLanding } from "@/lib/rituals/landing";
+import { DailyRitualForm } from "@/components/daily-ritual-form";
+import { getDailyRitual } from "@/lib/rituals/daily";
 
 export default async function DailyPage() {
-  const { profile, session } = await getRitualLanding("daily");
+  const { commitments, entry, periodStart, profile, session } = await getDailyRitual();
 
   return (
     <section className="rounded-[2rem] border border-line bg-surface p-8 sm:p-10">
@@ -11,12 +12,10 @@ export default async function DailyPage() {
       </h1>
       <p className="mt-4 max-w-2xl leading-7 text-muted">
         {session
-          ? `Your latest ${session.status} daily record is for ${session.period_start}.`
-          : "No daily record exists yet. The first six-beat draft will begin here."}
+          ? `Your ${session.status} daily record is for ${session.period_start}.`
+          : `Start the daily draft for ${periodStart}.`}
       </p>
-      <p className="mt-6 text-sm text-muted">
-        The server verified this session and loaded only your RLS-scoped ledger rows.
-      </p>
+      <DailyRitualForm commitments={commitments} entry={entry} periodStart={periodStart} session={session} />
     </section>
   );
 }
