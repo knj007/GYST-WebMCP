@@ -64,7 +64,7 @@ supabase db reset --local --no-seed
 Result: PASS; all three local migrations replayed.
 
 supabase test db --local
-Result: PASS; 4 files, 157 assertions.
+Result: PASS; 5 files, 177 assertions.
 
 supabase db lint --local --level error --fail-on error
 Result: PASS; no schema errors.
@@ -82,7 +82,7 @@ supabase gen types typescript --local --schema public
 Result: PASS; the generated local `commit_daily_ritual` RPC signature matches the checked-in `src/lib/db/database.types.ts` update.
 ```
 
-The completed local application evidence is separate from pgTAP: `npm test` passes 5 Vitest files / 15 tests, including focused Server Action errors and idempotent retry behavior; `npm run test:e2e` passes 2 Playwright tests. The authenticated browser test provisions only `gyst-local-ritual-e2e@example.test` against the verified local API URL, creates one local fixture commitment, and deletes that exact local Auth identity in teardown. It covers sign-in, draft save, reload/resume, ordinary human commit, and committed-state reload. The source contract also proves that `src/lib/webmcp` does not exist yet and `saveDailyDraft` has no commit-RPC reference. Focused application/WebMCP and database/security reviews are approved; W3 may be considered for a PR, but not an A8 gate.
+Wave 4 adds owner-timezone bounded context, deterministic findings, a fictional local seed, and the ordinary weekly draft/commit flow. `npm test` passes 7 Vitest files / 20 tests and `npm run test:e2e` passes 3 Playwright tests, including weekly save, resume, commit, and immutable refresh. The seed uses only invented `.test` data and is applied only by local resets.
 
 The pgTAP suites prove:
 
