@@ -14,6 +14,8 @@ describe("WebMCP daily capability boundary", () => {
     const registration = readFileSync(join(repositoryRoot, "src", "components", "webmcp-tools.tsx"), "utf8");
     const toolNames = Array.from(registration.matchAll(/(?:name: |mutation\()"(gyst\.[^"]+)"/g), (match) => match[1]).filter((name): name is string => typeof name === "string");
     expect(toolNames).toHaveLength(14);
+    expect(registration).toContain('oneOf: [');
+    expect(registration).toContain('{ required: ["text", "type"] }');
     expect(toolNames.some((name) => /^gyst\.(?:commit|delete|export|sql|history)/i.test(name))).toBe(false);
     expect(tools).not.toContain("commit_daily_ritual");
     expect(readFileSync(join(repositoryRoot, "src", "app", "api", "webmcp", "daily", "route.ts"), "utf8")).not.toContain("commit_daily_ritual");

@@ -17,7 +17,7 @@ export default async function DailyPage() {
           : `Start the daily draft for ${periodStart}.`}
       </p>
       {session?.status !== "committed" ? <aside className="mt-6 rounded-2xl border border-accent/20 bg-accent/5 p-5" aria-label="Daily check-in prompt"><p className="font-semibold">Ready for today’s check-in?</p><p className="mt-1 text-sm leading-6 text-muted">Start with what moved today, name anything that got in the way, then choose the one commitment to carry into tomorrow.</p></aside> : null}
-      <DailyRitualForm commitments={commitments} entry={entry} periodStart={periodStart} session={session} />
+      <DailyRitualForm key={session?.version ?? "new-daily-draft"} commitments={commitments} entry={entry} periodStart={periodStart} session={session} />
       {session?.status !== "committed" ? <WebMcpTools ritual="daily" /> : null}
     </section>
   );
