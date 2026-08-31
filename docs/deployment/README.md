@@ -16,7 +16,7 @@ Last verified: 2026-08-30
 | Output directory | Next.js default |
 | Node.js | 24.x |
 | Production URL | `https://gyst-web-mcp.vercel.app` |
-| GitHub `main` at this checkpoint | `c576e08d7a3151dc8cff7939ae56f347633f4263` (documentation-only PR #3 merge) |
+| GitHub `main` before PR #4 | `c576e08d7a3151dc8cff7939ae56f347633f4263` (documentation-only PR #3 merge) |
 | Application activation baseline | `04851f557d24d4c43d65106ba5f4beb302613191` (A5/A9) |
 | Historical foundation deployment | `dpl_6mmxpMFXaSvFoH1xxHJf2zTzPUgJ` at `b6ba3ea27f862b2347b0eaaeb3af0ef1cbd7eb4c` |
 
