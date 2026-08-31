@@ -17,6 +17,9 @@ export function SiteHeader() {
           <Link className="transition-colors hover:text-foreground" href="/login">
             Sign in
           </Link>
+          <Link className="transition-colors hover:text-foreground" href="/signup">
+            Create account
+          </Link>
         </nav>
       </div>
     </header>
