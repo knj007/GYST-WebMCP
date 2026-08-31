@@ -2,7 +2,7 @@
 
 Status: execution in progress; Wave 2 production foundation and browser-safe application activation verified
 Prepared: 2026-08-29
-Last verified: 2026-08-30
+Last verified: 2026-08-31
 Submission target: 2026-09-03 at 1:00 p.m. Pacific / 3:00 p.m. Central
 Repository: `knj007/GYST-WebMCP`
 Supabase project: `knj007's Project` (`ztxuxbjimssuxkazawxr`, `us-east-2`)
@@ -55,6 +55,13 @@ Verified before this runbook was written:
 The earlier product plan remains the product specification. This runbook is the execution/control layer and does not replace the product decisions in that plan.
 
 ### 2.1 Current execution checkpoint — 2026-08-30
+
+#### Wave 4 update — 2026-08-31
+
+- PR #6 merged as `076f1a5`. The local Wave 3 daily flow and Wave 4 weekly context/draft/commit flow are now on `main`; Vercel PR checks passed before merge.
+- Remote Supabase now has five tracked migrations through `20260831135035_weekly_context_patterns_and_commit.sql`. Remote migration history and error-level lint pass; advisors report no security/error finding and only informational unused-index notices on the empty ledger.
+- Local Wave 4 verification passes: fresh seeded reset, 5 pgTAP files / 177 assertions, local lint/advisors, typecheck, lint, build, 7 Vitest files / 20 tests, and 3 Playwright tests. The local seed is deterministic fictional data only and remains absent from production.
+- WebMCP tool registration, production demo identity/data, Turnstile, reminders, exports/deletion, and submission evidence remain unfinished. Do not represent the application as submission-ready.
 
 - Before PR #4, GitHub `main` resolved to `c576e08d7a3151dc8cff7939ae56f347633f4263`, a documentation-only merge. The deployed application's A5/A9 activation baseline is `04851f557d24d4c43d65106ba5f4beb302613191`. The earlier `369733b0f6eb50c1d9cf606b09b2e0a1c0b5b8ad` database/application baseline and the foundation deployment at `b6ba3ea` are historical evidence only.
 - The repository contains a strict TypeScript Next.js 16.3.3 App Router application with Tailwind, ESLint, Vitest, Playwright, a committed npm lockfile, and Node 24.x runtime metadata.
@@ -569,6 +576,8 @@ Evidence gate W5:
 - Tool mutations update only drafts.
 - The agent cannot commit through any registered tool.
 - Ordinary form E2E tests still pass with WebMCP unavailable.
+
+Current local W5 checkpoint: the fourteen named daily/weekly read and draft-only tools are registered through `document.modelContext` only from authenticated active ritual pages and are released by an `AbortController` on unmount. They call authenticated draft-only endpoints that reuse the existing normal draft-save actions; no tool or endpoint calls a commit RPC. Input contracts bound strings, lists, UUIDs, dates, and enums. The UI records recent agent-made draft changes and states that they were not committed. Local verification passes 9 Vitest files / 24 tests, lint, typecheck, production build, and 3 ordinary-form Playwright tests. Supported in-app-browser discovery/lifecycle and authenticated draft-mutation evidence remain required before declaring W5 complete; on this host, the in-app browser cannot reach the local loopback dev server, so that proof needs a browser-reachable preview or an adjusted browser network path.
 
 ### Wave 6 — Signup protection and reminder delivery
 

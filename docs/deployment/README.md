@@ -1,8 +1,12 @@
 # Deployment and Provider Guide
 
-Last verified: 2026-08-30
+Last verified: 2026-08-31
 
 ## Vercel production
+
+### Wave 4 release update
+
+PR #6 merged as `076f1a5` after its Vercel checks passed. Git integration is responsible for the corresponding production build; this guide does not treat that build as proof of an authenticated ritual flow because production has no authorized demo identity or fictional ledger data. The Wave 4 Supabase migration is applied remotely; the local fictional seed is intentionally not.
 
 | Setting | Current value |
 | --- | --- |

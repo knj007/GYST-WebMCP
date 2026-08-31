@@ -1,4 +1,5 @@
 import { WeeklyRitualForm } from "@/components/weekly-ritual-form";
+import { WebMcpTools } from "@/components/webmcp-tools";
 import { getWeeklyRitual, type WeeklyFinding } from "@/lib/rituals/weekly";
 
 function findingText(finding: WeeklyFinding) {
@@ -23,6 +24,7 @@ export default async function WeeklyPage() {
         {ritual.context.findings.length ? <ul className="mt-4 space-y-3">{ritual.context.findings.map((finding) => <li key={finding.id} className="rounded-xl border border-line p-4"><p className="text-sm font-semibold capitalize">{finding.type.replaceAll("_", " ")}</p><p className="mt-1 text-sm text-muted">{findingText(finding)}</p></li>)}</ul> : <p className="mt-3 text-sm text-muted">No structured patterns appeared in this bounded week.</p>}
       </section>
       <WeeklyRitualForm ritual={ritual} />
+      {ritual.session?.status !== "committed" ? <WebMcpTools ritual="weekly" /> : null}
     </section>
   );
 }

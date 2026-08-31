@@ -1,4 +1,5 @@
 import { DailyRitualForm } from "@/components/daily-ritual-form";
+import { WebMcpTools } from "@/components/webmcp-tools";
 import { getDailyRitual } from "@/lib/rituals/daily";
 
 export default async function DailyPage() {
@@ -16,6 +17,7 @@ export default async function DailyPage() {
           : `Start the daily draft for ${periodStart}.`}
       </p>
       <DailyRitualForm commitments={commitments} entry={entry} periodStart={periodStart} session={session} />
+      {session?.status !== "committed" ? <WebMcpTools ritual="daily" /> : null}
     </section>
   );
 }

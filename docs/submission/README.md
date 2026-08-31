@@ -1,10 +1,16 @@
 # Submission Readiness
 
-Last verified: 2026-08-30
+Last verified: 2026-08-31
 
-Status: production database foundation deployed; product and submission evidence are not ready.
+Status: daily and weekly ordinary-form ledger flows are merged, with Wave 4 schema applied to production; product and submission evidence are not ready.
+
+Wave 5 local checkpoint: all fourteen required WebMCP read/draft tools are implemented locally with AbortController lifecycle cleanup and no commit/delete/export/history/SQL tool. Local unit coverage is 9 files / 24 tests and ordinary-form browser regression remains 3 tests. Authenticated supported-browser discovery and draft-tool evidence are still pending, so this is not a Wave 5 completion claim. The in-app browser cannot reach this host’s local loopback dev server; the final proof needs a browser-reachable preview or adjusted browser network path.
 
 ## Evidence already established
+
+- PR #6 (`076f1a5`) merged the daily/weekly ordinary-form rituals, bounded weekly findings, and local-only fictional seed. The Wave 4 migration is applied remotely and remote migration history/error-level lint pass; remote advisors have no security/error finding.
+- Local evidence now passes 5 pgTAP files / 177 assertions, 7 Vitest files / 20 tests, 3 Playwright tests, lint, typecheck, and production build.
+- The fictional demo ledger is deterministic and reset-safe but local-only; production has no demo identity or application data.
 
 - Clean, reproducible Next.js/npm foundation with pinned runtime and dependency versions.
 - Local Supabase reset, pgTAP, lint, and security-advisor workflow.

@@ -1,8 +1,15 @@
 # Database and RLS Guide
 
-Last verified: 2026-08-30
+Last verified: 2026-08-31
 
 ## Current state
+
+### Wave 4 update — 2026-08-31
+
+- `20260831135035_weekly_context_patterns_and_commit.sql` is merged and applied to the hosted project after PR #6 (`076f1a5`).
+- It adds bounded owner-timezone weekly context, stable structured findings, and optimistic/idempotent ordinary weekly draft/commit RPCs. All public RPCs remain `SECURITY INVOKER`.
+- Fresh local reset with seed, pgTAP, error-level lint, and advisors passed: 5 files / 177 assertions; no security or error finding. The local seed is deterministic fictional data only and is never pushed or applied remotely.
+- Hosted migration history and error-level lint pass. Hosted advisors report no security/error finding and only informational unused-index notices on the empty ledger.
 
 - Hosted project: `knj007's Project` (`ztxuxbjimssuxkazawxr`, `us-east-2`)
 - PostgreSQL major version: 17 locally and remotely
@@ -115,7 +122,7 @@ supabase db lint
 supabase migration list --local
 ```
 
-The empty `supabase/seed.sql` is intentional. Future seed data must be fictional, deterministic, and safe to delete.
+`supabase/seed.sql` contains a deterministic, fictional, local-only weekly demo ledger. It uses a fixed `.test` identity and fixed dates/UUIDs, demonstrates every Wave 4 finding and exclusion, and must never be applied to the hosted project.
 
 Create every forward migration through the CLI:
 
