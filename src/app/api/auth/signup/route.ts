@@ -13,7 +13,11 @@ const responses = {
 export async function POST(request: Request) {
   let body: Record<string, unknown>;
   try {
-    body = (await request.json()) as Record<string, unknown>;
+    const parsed = await request.json();
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return Response.json(responses.challenge, { status: responses.challenge.status });
+    }
+    body = parsed as Record<string, unknown>;
   } catch {
     return Response.json(responses.challenge, { status: responses.challenge.status });
   }
