@@ -611,12 +611,23 @@ export type Database = {
       commit_daily_ritual: {
         Args: {
           p_expected_version: number
-          p_idempotency_key: string
           p_ritual_session_id: string
         }
         Returns: {
           committed_at: string
           ritual_session_id: string
+          version: number
+        }[]
+      }
+      save_daily_ritual_draft: {
+        Args: {
+          p_draft: Json
+          p_expected_session_version?: number
+          p_period_start: string
+        }
+        Returns: {
+          ritual_session_id: string
+          status: Database["public"]["Enums"]["ritual_status"]
           version: number
         }[]
       }

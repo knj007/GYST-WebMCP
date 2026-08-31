@@ -13,7 +13,7 @@ Status: production database foundation deployed; product and submission evidence
 - Fresh local reset and all 120 pgTAP assertions pass; local and production error-level lint pass; production security advisors have no findings.
 - Healthy production homepage at `https://gyst-web-mcp.vercel.app`; before PR #4, GitHub `main` was `c576e08` (documentation-only), while the active application behavior remains the A5/A9 baseline (`04851f5`).
 - Browser-safe production Supabase URL and publishable-key configuration is complete. Authenticated daily and weekly route shells exist; unauthenticated production `/daily` now redirects to `/login`, not to configuration.
-- Local-only Wave 3 work adds an ordinary daily draft form and a provisional invoker-only commit transaction. Security review blocked the transaction-local RLS marker as forgeable by a SQL-capable authenticated caller, so it has not passed W3 and cannot be reviewed, merged, deployed, or approved for production.
+- Local-only Wave 3 work adds an ordinary daily draft form, atomic draft-save RPC, and validated invoker-only commit transaction. The selected human-only boundary is WebMCP capability—draft tools only, no commit tool—while the database protects owner isolation, atomic close/event creation, and immutability. The work has not passed the remaining W3 browser/independent-review evidence and is not merged, deployed, or approved for production.
 - Local-only reminder Worker skeleton with successful dry runs.
 - Ownership and approval rules recorded in `AGENTS.md` and the execution runbook.
 

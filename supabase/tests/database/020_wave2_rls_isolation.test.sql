@@ -42,11 +42,11 @@ values
   ('a5000000-0000-4000-8000-000000000003', '11111111-1111-4111-8111-111111111111', 'daily', '2026-08-29');
 
 insert into public.daily_entries (
-  id, user_id, ritual_session_id, moved_text, previous_commitment_id, previous_commitment_outcome
+  id, user_id, ritual_session_id, moved_text, previous_commitment_id, previous_commitment_outcome, next_commitment_id
 )
 values
-  ('a6000000-0000-4000-8000-000000000001', '11111111-1111-4111-8111-111111111111', 'a5000000-0000-4000-8000-000000000001', 'Moved A', 'a4000000-0000-4000-8000-000000000001', 'done'),
-  ('b6000000-0000-4000-8000-000000000001', '22222222-2222-4222-8222-222222222222', 'b5000000-0000-4000-8000-000000000001', 'Moved B', 'b4000000-0000-4000-8000-000000000001', 'partial');
+  ('a6000000-0000-4000-8000-000000000001', '11111111-1111-4111-8111-111111111111', 'a5000000-0000-4000-8000-000000000001', 'Moved A', 'a4000000-0000-4000-8000-000000000001', 'done', 'a4000000-0000-4000-8000-000000000001'),
+  ('b6000000-0000-4000-8000-000000000001', '22222222-2222-4222-8222-222222222222', 'b5000000-0000-4000-8000-000000000001', 'Moved B', 'b4000000-0000-4000-8000-000000000001', 'partial', 'b4000000-0000-4000-8000-000000000001');
 
 insert into public.weekly_entries (id, user_id, ritual_session_id, decision_text)
 values
@@ -112,7 +112,7 @@ select is((select count(*) from public.commitments), 1::bigint, 'owner sees only
 select is((select count(*) from public.ritual_sessions), 3::bigint, 'owner sees only own ritual sessions');
 select is((select count(*) from public.daily_entries), 1::bigint, 'owner sees only own daily entries');
 select is((select count(*) from public.weekly_entries), 1::bigint, 'owner sees only own weekly entries');
-select is((select count(*) from public.commitment_events), 1::bigint, 'owner sees only own commitment events');
+select is((select count(*) from public.commitment_events), 2::bigint, 'owner sees only own commitment events');
 select is((select count(*) from public.reminder_rules), 1::bigint, 'owner sees only own reminder rules');
 select is((select count(*) from public.notification_events), 1::bigint, 'owner sees only own notification events');
 
@@ -152,7 +152,7 @@ select throws_ok($$insert into public.commitment_events (user_id, commitment_id,
 select throws_ok($$insert into public.reminder_rules (user_id, ritual_session_id, ritual_kind, cadence, local_time, timezone, next_run_at) values ('11111111-1111-4111-8111-111111111111', 'a5000000-0000-4000-8000-000000000001', 'weekly', 'daily', '09:00', 'UTC', '2026-09-01 09:00+00')$$, '23503', null::text, 'ritual reminder kind must match its session kind');
 select throws_ok($$insert into public.reminder_rules (user_id, ritual_session_id, ritual_kind, cadence, local_time, timezone, next_run_at) values ('11111111-1111-4111-8111-111111111111', 'b5000000-0000-4000-8000-000000000001', 'daily', 'daily', '09:00', 'UTC', '2026-09-01 09:00+00')$$, '23503', null::text, 'reminder cannot link to another user session');
 select throws_ok($$insert into public.ritual_sessions (user_id, kind, period_start, status, committed_at) values ('11111111-1111-4111-8111-111111111111', 'daily', '2026-08-30', 'committed', now())$$, '42501', null::text, 'authenticated client cannot insert an already committed session');
-select throws_ok($$update public.ritual_sessions set status = 'committed', committed_at = now(), version = version + 1 where id = 'a5000000-0000-4000-8000-000000000003'$$, '42501', null::text, 'authenticated client cannot bypass the future atomic commit path');
+select throws_ok($$update public.ritual_sessions set status = 'committed', version = version + 1 where id = 'a5000000-0000-4000-8000-000000000003'$$, '23514', null::text, 'an incomplete daily close is rejected at the ledger boundary');
 
 -- Owner CRUD succeeds where the table is intentionally mutable.
 select lives_ok($$update public.profiles set display_name = 'Owner A updated', version = version + 1 where user_id = '11111111-1111-4111-8111-111111111111'$$, 'owner can update own profile');
@@ -184,7 +184,7 @@ select lives_ok($$delete from public.weekly_entries where id = 'a7000000-0000-40
 select lives_ok($$delete from public.ritual_sessions where id = 'a5000000-0000-4000-8000-000000000098'$$, 'owner can delete own weekly draft session');
 
 select lives_ok($$insert into public.commitment_events (id, user_id, commitment_id, ritual_session_id, kind, title_snapshot, event_on) values ('a8000000-0000-4000-8000-000000000099', '11111111-1111-4111-8111-111111111111', 'a4000000-0000-4000-8000-000000000001', 'a5000000-0000-4000-8000-000000000003', 'created', 'Commitment A', '2026-08-29')$$, 'owner can append an event to an own draft session');
-select is((select count(*) from public.commitment_events), 2::bigint, 'owner can read own appended event');
+select is((select count(*) from public.commitment_events), 3::bigint, 'owner can read own appended event');
 select lives_ok($$insert into public.reminder_rules (id, user_id, ritual_kind, cadence, local_time, timezone, next_run_at) values ('a9000000-0000-4000-8000-000000000099', '11111111-1111-4111-8111-111111111111', 'daily', 'daily', '08:00', 'UTC', '2026-09-01 08:00+00')$$, 'owner can insert own reminder rule');
 select lives_ok($$update public.reminder_rules set local_time = '08:30', version = version + 1 where id = 'a9000000-0000-4000-8000-000000000099'$$, 'owner can update own reminder rule');
 select lives_ok($$delete from public.reminder_rules where id = 'a9000000-0000-4000-8000-000000000099'$$, 'owner can delete own reminder rule');

@@ -42,6 +42,7 @@ export function DailyRitualForm({ commitments, entry, periodStart, session }: Da
 
   return (
     <form action={saveAction} className="mt-8 space-y-6">
+      <input name="session_version" type="hidden" value={session?.version ?? ""} />
       <fieldset disabled={isPending} className="space-y-6">
         <div>
           <label className="block text-sm font-semibold" htmlFor="moved_text">
