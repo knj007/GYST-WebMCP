@@ -616,7 +616,28 @@ export type Database = {
           version: number
         }[]
       }
+      commit_weekly_ritual: {
+        Args: { p_expected_version: number; p_ritual_session_id: string }
+        Returns: {
+          committed_at: string
+          ritual_session_id: string
+          version: number
+        }[]
+      }
+      get_weekly_context: { Args: { p_week_start: string }; Returns: Json }
       save_daily_ritual_draft: {
+        Args: {
+          p_draft: Json
+          p_expected_session_version?: number
+          p_period_start: string
+        }
+        Returns: {
+          ritual_session_id: string
+          status: Database["public"]["Enums"]["ritual_status"]
+          version: number
+        }[]
+      }
+      save_weekly_ritual_draft: {
         Args: {
           p_draft: Json
           p_expected_session_version?: number
