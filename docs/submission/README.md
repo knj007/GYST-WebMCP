@@ -10,8 +10,8 @@ Status: production database foundation deployed; product and submission evidence
 - Local Supabase reset, pgTAP, lint, and security-advisor workflow.
 - Removal of the untracked hosted RLS helper and event trigger.
 - Approved production application of the 11-table Wave 2 schema with RLS enabled, no `anon` table privileges, and operation-specific authenticated policies.
-- The production Wave 2 gate passed at 120 pgTAP assertions. The current local Wave 3 reset passes 135 assertions, error-level lint, and advisors with no security/error finding; production security advisors have no findings.
-- Healthy production homepage at `https://gyst-web-mcp.vercel.app`; at this checkpoint, GitHub `main` is `c576e08` (documentation-only), while the active application behavior remains the A5/A9 baseline (`04851f5`).
+- Fresh local reset and all 120 pgTAP assertions pass; local and production error-level lint pass; production security advisors have no findings.
+- Healthy production homepage at `https://gyst-web-mcp.vercel.app`; before PR #4, GitHub `main` was `c576e08` (documentation-only), while the active application behavior remains the A5/A9 baseline (`04851f5`).
 - Browser-safe production Supabase URL and publishable-key configuration is complete. Authenticated daily and weekly route shells exist; unauthenticated production `/daily` now redirects to `/login`, not to configuration.
 - Local-only Wave 3 work adds an ordinary daily draft form and an invoker-only atomic human commit transaction. It has not been reviewed, merged, deployed, or approved for production.
 - Local-only reminder Worker skeleton with successful dry runs.

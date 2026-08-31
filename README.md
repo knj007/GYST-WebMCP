@@ -4,7 +4,7 @@ GYST is a human-owned daily and weekly ritual ledger. The application can read b
 
 ## Current checkpoint
 
-At the 2026-08-30 documentation checkpoint, GitHub `main` resolved to `c576e08d7a3151dc8cff7939ae56f347633f4263` (the documentation-only merge of PR #3). The production application's A5/A9 activation baseline is `04851f557d24d4c43d65106ba5f4beb302613191`; the subsequent `main` merge did not change application code. The approved Wave 2 migration is present in production, and the two browser-safe Supabase values have been configured in Vercel Production under separate A5 approval:
+Before PR #4, GitHub `main` resolved to `c576e08d7a3151dc8cff7939ae56f347633f4263` (the documentation-only merge of PR #3). The production application's A5/A9 activation baseline is `04851f557d24d4c43d65106ba5f4beb302613191`; the subsequent documentation-only merge did not change application code. The approved Wave 2 migration is present in production, and the two browser-safe Supabase values have been configured in Vercel Production under separate A5 approval:
 
 - Production: <https://gyst-web-mcp.vercel.app>
 - Next.js App Router: public landing/sign-in plus request-dynamic authenticated `/daily` and `/weekly` shells
