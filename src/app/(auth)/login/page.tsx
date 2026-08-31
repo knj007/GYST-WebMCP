@@ -28,7 +28,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         </p>
         <h1 className="mt-3 text-4xl font-semibold tracking-tight">Welcome back.</h1>
         <p className="mt-3 leading-7 text-muted">
-          Sign in to continue your daily or weekly ritual. Public signup arrives later with abuse protection.
+          Sign in to continue your daily or weekly ritual. New here? <Link className="font-medium text-foreground underline" href="/signup">Create an account</Link>.
         </p>
 
         {message ? (
