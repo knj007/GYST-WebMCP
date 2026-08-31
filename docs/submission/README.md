@@ -2,9 +2,9 @@
 
 Last verified: 2026-08-31
 
-Status: daily and weekly ordinary-form ledger flows are merged, with Wave 4 schema applied to production; product and submission evidence are not ready.
+Status: daily and weekly ordinary-form ledger flows are merged, with Wave 4 schema applied to production; Wave 5 is verified on an isolated preview. Product and submission evidence are not ready.
 
-Wave 5 local checkpoint: all fourteen required WebMCP read/draft tools are implemented locally with AbortController lifecycle cleanup and no commit/delete/export/history/SQL tool. Local unit coverage is 9 files / 24 tests and ordinary-form browser regression remains 3 tests. Authenticated supported-browser discovery and draft-tool evidence are still pending, so this is not a Wave 5 completion claim. The in-app browser cannot reach this host’s local loopback dev server; the final proof needs a browser-reachable preview or adjusted browser network path.
+Wave 5 evidence: all fourteen required WebMCP read/draft tools are implemented with AbortController lifecycle cleanup and no commit/delete/export/history/SQL tool. Local unit coverage is 9 files / 24 tests and ordinary-form browser regression remains 3 tests. In the supported in-app browser against the `codex/wave5-webmcp` Vercel preview, an isolated fictional user authenticated successfully; the daily and weekly seven-tool surfaces discovered, oversized input was rejected, draft mutations visibly recorded non-committing audit entries, and the tools disappeared off ritual routes. A direct ledger check confirmed the daily and weekly sessions remained drafts.
 
 ## Evidence already established
 

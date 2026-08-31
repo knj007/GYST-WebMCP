@@ -9,8 +9,8 @@ Latest verified checkpoint — 2026-08-31:
 - `main` is `076f1a5` (PR #6), which merged the daily and weekly ordinary-form flows, bounded weekly findings, and the local-only fictional demo seed.
 - Hosted Supabase has all five tracked migrations through `20260831135035_weekly_context_patterns_and_commit.sql`; remote migration history and error-level lint pass. Advisors have no security or error finding, only empty-ledger informational unused-index notices.
 - Local evidence passes: 5 pgTAP files / 177 assertions, 7 Vitest files / 20 tests, and 3 Playwright tests, plus lint, typecheck, and production build.
-- `supabase/seed.sql` is deterministic and fictional, but is local-only. Production contains no demo identity and no application ledger data.
-- Wave 5's local WebMCP draft-only tool implementation is in progress; supported-browser authenticated discovery evidence is still required. Production demo access/data, Turnstile, reminders, exports, deletion, and submission artifacts remain unfinished.
+- `supabase/seed.sql` remains deterministic and fictional. An isolated fictional production Auth account and fictional ledger were additionally created solely to verify the browser-reachable Wave 5 preview; no real personal data was used.
+- Wave 5 is verified on the `codex/wave5-webmcp` preview: all fourteen draft-only tools discover on active authenticated daily/weekly routes, reject oversized input, update drafts only, and disappear off ritual routes. Human commit controls remain separate. Turnstile, reminders, exports, deletion, merge/release, and final submission artifacts remain unfinished.
 
 Historical checkpoint:
 
