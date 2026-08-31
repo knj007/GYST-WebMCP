@@ -106,9 +106,13 @@ export function DailyRitualForm({ commitments, entry, periodStart, session }: Da
                 </option>
               ))}
             </select>
+            <label className="mt-3 block text-sm" htmlFor="previous_commitment_outcome">
+              Outcome
+            </label>
             <select
-              className="mt-3 w-full rounded-xl border border-line bg-background p-3"
+              className="mt-1 w-full rounded-xl border border-line bg-background p-3"
               defaultValue={entry?.previous_commitment_outcome ?? ""}
+              id="previous_commitment_outcome"
               name="previous_commitment_outcome"
               required
             >
