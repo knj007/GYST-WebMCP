@@ -4,12 +4,13 @@ import { useActionState } from "react";
 
 import {
   commitDailyRitual,
-  initialDailyActionState,
   saveDailyDraft,
 } from "@/app/(ritual)/daily/actions";
 import type { DailyRitual } from "@/lib/rituals/daily";
 
 type DailyRitualFormProps = Pick<DailyRitual, "commitments" | "entry" | "periodStart" | "session">;
+
+const initialDailyActionState = { message: "", status: "idle" } as const;
 
 function actionMessage(message: string, status: "error" | "idle" | "success") {
   if (!message || status === "idle") {

@@ -32,7 +32,7 @@ Current production state:
 
 The deployed routes are an authenticated application shell, not proof that the daily/weekly ritual, human-only commit, WebMCP, reminder, or demo flows are complete.
 
-The daily draft form, atomic draft-save RPC, and validated commit RPC are current local Wave 3 work only. The owner selected the application/WebMCP capability boundary—WebMCP has no commit tool—rather than a false database claim about human origin. This local work has not passed full W3 review, been merged, deployed, or paired with an A8 production migration approval; production remains the authenticated shell and empty Wave 2 ledger described above.
+The daily draft form, atomic draft-save RPC, and validated commit RPC are current local Wave 3 work only. The owner selected the application/WebMCP capability boundary—WebMCP has no commit tool—rather than a false database claim about human origin. Local W3 evidence now includes the ordinary-form authenticated E2E flow, focused Server Action error/retry coverage, a negative no-WebMCP-commit source contract, and approved focused application/database reviews. This local work has not been merged, deployed, or paired with an A8 production migration approval; production remains the authenticated shell and empty Wave 2 ledger described above.
 
 The sanitized configuration and deployment evidence is in [production-a5-a9-evidence-2026-08-30.md](production-a5-a9-evidence-2026-08-30.md). A5 and A9 are complete only for the listed configuration and rebuild; future production configuration or deployments remain gated.
 

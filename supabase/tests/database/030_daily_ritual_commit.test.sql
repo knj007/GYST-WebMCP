@@ -1,6 +1,6 @@
 begin;
 
-select plan(36);
+select plan(37);
 
 insert into auth.users (id, email)
 values
@@ -130,6 +130,11 @@ select is(
   'a rejected close rolls back its outcome event'
 );
 
+select throws_ok(
+  $$select * from public.commit_daily_ritual('d3000000-0000-4000-8000-000000000002', null::bigint)$$,
+  '40001', null::text,
+  'a missing draft version cannot commit through the ordinary application RPC'
+);
 select throws_ok(
   $$select * from public.commit_daily_ritual('d3000000-0000-4000-8000-000000000002', 0)$$,
   '40001', null::text,

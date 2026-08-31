@@ -7,12 +7,18 @@ import { readDailyDraft } from "@/lib/rituals/daily-draft";
 import { getLocalDate } from "@/lib/rituals/daily";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-type DailyActionState = {
+export type DailyActionState = {
   message: string;
   status: "error" | "idle" | "success";
 };
 
-export const initialDailyActionState: DailyActionState = { message: "", status: "idle" };
+function isAlreadyCommittedError(error: { code?: string; message?: string } | null) {
+  return error?.code === "23514" && error.message === "today's daily ritual is already committed";
+}
+
+function draftConflictMessage(intent: "committing" | "saving") {
+  return `The daily draft changed elsewhere. Refresh before ${intent}.`;
+}
 
 function readExpectedSessionVersion(formData: FormData): number | null {
   const value = formData.get("session_version");
@@ -50,9 +56,9 @@ async function persistDailyDraft(formData: FormData) {
 
   if (error || !data) {
     if (error?.code === "40001") {
-      throw new Error("The daily draft changed elsewhere. Refresh before saving.");
+      throw new Error(draftConflictMessage("saving"));
     }
-    if (error?.code === "23514" && error.message === "today's daily ritual is already committed") {
+    if (isAlreadyCommittedError(error)) {
       throw new Error("Today's daily ritual is already committed.");
     }
     throw new Error("Unable to save the daily draft.");
@@ -88,6 +94,15 @@ export async function commitDailyRitual(
       p_expected_version: session.version,
       p_ritual_session_id: session.ritual_session_id,
     });
+
+    if (error?.code === "40001") {
+      throw new Error(draftConflictMessage("committing"));
+    }
+
+    if (isAlreadyCommittedError(error)) {
+      revalidatePath("/daily");
+      return { message: "Daily ritual committed. The record is now immutable.", status: "success" };
+    }
 
     if (error) {
       throw new Error("Complete the required daily fields and refresh if this draft changed elsewhere.");

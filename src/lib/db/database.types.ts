@@ -609,10 +609,7 @@ export type Database = {
     }
     Functions: {
       commit_daily_ritual: {
-        Args: {
-          p_expected_version: number
-          p_ritual_session_id: string
-        }
+        Args: { p_expected_version: number; p_ritual_session_id: string }
         Returns: {
           committed_at: string
           ritual_session_id: string
