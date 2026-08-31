@@ -32,7 +32,7 @@ Current production state:
 
 The deployed routes are an authenticated application shell, not proof that the daily/weekly ritual, human-only commit, WebMCP, reminder, or demo flows are complete.
 
-The daily draft form and human-only atomic commit are current local Wave 3 work only. They have not been reviewed, merged, deployed, or paired with an A8 production migration approval; production remains the authenticated shell and empty Wave 2 ledger described above.
+The daily draft form and provisional commit RPC are current local Wave 3 work only. Security review blocked its transaction-local RLS marker as forgeable by a SQL-capable authenticated caller, so it has not passed W3, been reviewed, merged, deployed, or paired with an A8 production migration approval; production remains the authenticated shell and empty Wave 2 ledger described above.
 
 The sanitized configuration and deployment evidence is in [production-a5-a9-evidence-2026-08-30.md](production-a5-a9-evidence-2026-08-30.md). A5 and A9 are complete only for the listed configuration and rebuild; future production configuration or deployments remain gated.
 

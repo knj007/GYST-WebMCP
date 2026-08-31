@@ -8,7 +8,7 @@ Last verified: 2026-08-30
 - PostgreSQL major version: 17 locally and remotely
 - Supabase CLI used for verification: 2.116.0
 - Hosted migration history: `20260830160046`, `20260830194920`
-- Current local Wave 3 migration history: `20260830160046`, `20260830194920`, `20260830211216` (unreviewed and not hosted)
+- Current local Wave 3 prototype migration history: `20260830160046`, `20260830194920`, `20260830211216` (blocked by review, unreviewed, and not hosted)
 - Hosted security advisors: no findings
 - Hosted performance advisors: 18 informational unused-index notices on the brand-new empty schema; no security or error finding
 - Local application tables: 11 Wave 2 ledger tables with explicit RLS
@@ -20,7 +20,7 @@ This migration is remediation only. It does not establish the GYST ledger schema
 
 The second migration, `20260830194920_wave2_application_schema.sql`, establishes the application schema. It was applied to the linked hosted project under explicit A2 approval on 2026-08-30, after a dry run confirmed it was the only pending migration. The sanitized before/after evidence packet is [production-wave2-evidence-2026-08-30.md](production-wave2-evidence-2026-08-30.md).
 
-The current local Wave 3 migration, `20260830211216_daily_ritual_commit.sql`, adds the daily close transaction only. It is explicitly `SECURITY INVOKER`, retains normal RLS evaluation, grants `EXECUTE` only to `authenticated`, and uses an RLS-gated transaction-local marker for the validated draft-to-committed transition. It has not been reviewed, merged, or applied to the hosted project.
+The current local Wave 3 prototype migration, `20260830211216_daily_ritual_commit.sql`, adds a daily close transaction only. It is explicitly `SECURITY INVOKER`, retains normal RLS evaluation, and grants `EXECUTE` only to `authenticated`. Its attempted RLS-gated transaction-local marker is forgeable by a SQL-capable authenticated caller, so it is not a valid human-only authorization boundary. The migration is blocked pending an owner-approved redesign; do not review it as production-ready or apply it to the hosted project.
 
 ## Wave 2 application contract
 
@@ -49,13 +49,13 @@ The Data API surface is explicit:
 - `notification_events` are read-only for `authenticated`; the later reminder worker will use a narrow server-side claim/reconciliation path.
 - All policies are operation-specific. Updates have both `USING` and `WITH CHECK` predicates.
 
-Authenticated users may create only draft ritual sessions, and ordinary updates must leave them in draft state with no commit timestamp. The local daily human-only commit transaction owns the validated draft-to-committed transition; it uses invoker authority, not a privilege bypass. Draft daily and weekly entries may be edited while their parent session is a draft. After a session is committed, RLS and private trigger functions prevent the session and its entry from being updated or deleted. Stable IDs and ownership columns cannot be changed.
+Authenticated users may create only draft ritual sessions, and ordinary updates must leave them in draft state with no commit timestamp. The local daily prototype attempts to own the validated draft-to-committed transition, but it must not be treated as a human-only boundary until its authorization design is replaced. Draft daily and weekly entries may be edited while their parent session is a draft. After a session is committed, RLS and private trigger functions prevent the session and its entry from being updated or deleted. Stable IDs and ownership columns cannot be changed.
 
 Whole-account deletion remains possible through the `auth.users` cascade. A private Auth deletion trigger marks the affected user IDs transaction-locally, and immutable-ledger guards accept deletes only when both that marker and nested trigger depth prove the delete is part of the cascade. Standalone privileged deletes remain rejected even if the marker is spoofed.
 
 Indexes cover every foreign-key prefix, every `user_id` RLS filter, bounded weekly lookups, approaching key dates, commitment-event history, due reminder rules, and notification reconciliation paths.
 
-## Local Wave 2 and Wave 3 evidence
+## Local Wave 2 evidence and Wave 3 diagnostic results
 
 Verified on 2026-08-30 with Supabase CLI 2.116.0:
 
@@ -93,7 +93,7 @@ The pgTAP suites prove:
 - valid owner CRUD succeeds only on the intended table operations;
 - authenticated clients cannot insert already-committed sessions or manufacture/rewrite delivery history;
 - authenticated clients cannot directly transition a draft session to committed;
-- the authenticated daily commit RPC is `SECURITY INVOKER`, validates required fields, is cross-owner/stale-version safe, and returns an idempotent committed result without a duplicate event;
+- the local prototype's authenticated daily commit RPC is `SECURITY INVOKER`, validates required fields in its ordinary path, and returns an idempotent committed result without a duplicate event; these tests do not prove a human-only authorization boundary because the transaction-local marker is forgeable;
 - committed daily/weekly sessions and entries are immutable;
 - append-only commitment events and stable identifiers have trigger-level defense in depth.
 - whole-account Auth deletion removes every owned row without weakening standalone immutable-ledger guards.
