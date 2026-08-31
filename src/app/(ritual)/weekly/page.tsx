@@ -1,4 +1,5 @@
 import { WeeklyRitualForm } from "@/components/weekly-ritual-form";
+import { WebMcpTools } from "@/components/webmcp-tools";
 import { getWeeklyRitual, type WeeklyFinding } from "@/lib/rituals/weekly";
 
 function findingText(finding: WeeklyFinding) {
@@ -18,11 +19,13 @@ export default async function WeeklyPage() {
       <p className="text-sm font-semibold uppercase tracking-[0.16em] text-accent">Weekly ritual</p>
       <h1 className="mt-4 text-4xl font-semibold tracking-tight">Read before you ask.</h1>
       <p className="mt-4 max-w-2xl leading-7 text-muted">{ritual.context.week_start} through {ritual.context.week_end} in {ritual.context.timezone}. This context is deliberately bounded to one local week.</p>
+      {ritual.session?.status !== "committed" ? <aside className="mt-6 rounded-2xl border border-accent/20 bg-accent/5 p-5" aria-label="Weekly check-in prompt"><p className="font-semibold">Ready for this week’s check-in?</p><p className="mt-1 text-sm leading-6 text-muted">Read what the week shows, name what is missing, then turn the evidence into a decision and dated priorities.</p></aside> : null}
       <section className="mt-8 rounded-2xl border border-line bg-background p-6" aria-labelledby="weekly-findings">
         <h2 id="weekly-findings" className="text-xl font-semibold">What the week shows</h2>
         {ritual.context.findings.length ? <ul className="mt-4 space-y-3">{ritual.context.findings.map((finding) => <li key={finding.id} className="rounded-xl border border-line p-4"><p className="text-sm font-semibold capitalize">{finding.type.replaceAll("_", " ")}</p><p className="mt-1 text-sm text-muted">{findingText(finding)}</p></li>)}</ul> : <p className="mt-3 text-sm text-muted">No structured patterns appeared in this bounded week.</p>}
       </section>
       <WeeklyRitualForm ritual={ritual} />
+      {ritual.session?.status !== "committed" ? <WebMcpTools ritual="weekly" /> : null}
     </section>
   );
 }

@@ -4,6 +4,16 @@ GYST is a human-owned daily and weekly ritual ledger. The application can read b
 
 ## Current checkpoint
 
+Latest verified checkpoint — 2026-08-31:
+
+- `main` is `076f1a5` (PR #6), which merged the daily and weekly ordinary-form flows, bounded weekly findings, and the local-only fictional demo seed.
+- Hosted Supabase has all five tracked migrations through `20260831135035_weekly_context_patterns_and_commit.sql`; remote migration history and error-level lint pass. Advisors have no security or error finding, only empty-ledger informational unused-index notices.
+- Local evidence passes: 5 pgTAP files / 177 assertions, 7 Vitest files / 20 tests, and 3 Playwright tests, plus lint, typecheck, and production build.
+- `supabase/seed.sql` remains deterministic and fictional. An isolated fictional production Auth account and fictional ledger were additionally created solely to verify the browser-reachable Wave 5 preview; no real personal data was used.
+- Wave 5 is verified on the `codex/wave5-webmcp` preview: all fourteen draft-only tools discover on active authenticated daily/weekly routes, reject oversized input, update drafts only, and disappear off ritual routes. Human commit controls remain separate. Turnstile, reminders, exports, deletion, merge/release, and final submission artifacts remain unfinished.
+
+Historical checkpoint:
+
 Before PR #4, GitHub `main` resolved to `c576e08d7a3151dc8cff7939ae56f347633f4263` (the documentation-only merge of PR #3). The production application's A5/A9 activation baseline is `04851f557d24d4c43d65106ba5f4beb302613191`; the subsequent documentation-only merge did not change application code. The approved Wave 2 migration is present in production, and the two browser-safe Supabase values have been configured in Vercel Production under separate A5 approval:
 
 - Production: <https://gyst-web-mcp.vercel.app>
