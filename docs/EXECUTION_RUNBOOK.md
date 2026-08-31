@@ -56,7 +56,7 @@ The earlier product plan remains the product specification. This runbook is the 
 
 ### 2.1 Current execution checkpoint — 2026-08-30
 
-- GitHub `main` resolves to `04851f557d24d4c43d65106ba5f4beb302613191`. The earlier `369733b0f6eb50c1d9cf606b09b2e0a1c0b5b8ad` database/application baseline and the foundation deployment at `b6ba3ea` are historical evidence only.
+- Before PR #4, GitHub `main` resolved to `c576e08d7a3151dc8cff7939ae56f347633f4263`, a documentation-only merge. The deployed application's A5/A9 activation baseline is `04851f557d24d4c43d65106ba5f4beb302613191`. The earlier `369733b0f6eb50c1d9cf606b09b2e0a1c0b5b8ad` database/application baseline and the foundation deployment at `b6ba3ea` are historical evidence only.
 - The repository contains a strict TypeScript Next.js 16.3.3 App Router application with Tailwind, ESLint, Vitest, Playwright, a committed npm lockfile, and Node 24.x runtime metadata.
 - The application has a marketing page, sign-in flow, Supabase SSR clients, centralized `getClaims()` authorization, and request-dynamic authenticated daily/weekly route shells. It does not yet contain the ritual forms, atomic human-only commit, WebMCP tools, reminders, or demo ledger.
 - Docker Desktop and Supabase CLI 2.116.0 are available. The local Postgres 17 stack starts successfully with analytics disabled, and all core containers are running.
