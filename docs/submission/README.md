@@ -10,13 +10,16 @@ Judges do not need credentials. The public site offers "Open the demo", which si
 
 This replaces the shared demo account the plan previously implied. A shared account would have broken after the first judge: `ritual_sessions` is unique on `(user_id, kind, period_start)` and committed sessions are immutable, so the first commit would have left every later judge unable to perform the draft-to-commit demonstration at all. Per-session ledgers also make owner isolation something a judge can observe rather than something the submission asserts.
 
-Two hosted Supabase Auth settings are required and cannot be applied by migration: anonymous sign-ins enabled, and Turnstile captcha enabled. Captcha is the only abuse control on the anonymous sign-in endpoint, which is publicly reachable with the browser's publishable key.
+Both required hosted Supabase Auth settings are enabled and were confirmed on 2026-09-01: anonymous sign-ins, and Turnstile CAPTCHA protection. Captcha is the only abuse control on the anonymous sign-in endpoint, which is publicly reachable with the browser's publishable key, and it must never be disabled while anonymous sign-ins are on.
+
+The path was verified live in production: PR #15 merged as `7c4009b`, the migration was applied first, and the owner completed the demo entry in a browser onto a seeded fictional ledger. Sanitized evidence is in [../deployment/production-judge-demo-evidence-2026-09-01.md](../deployment/production-judge-demo-evidence-2026-09-01.md).
 
 Wave 5 evidence: all fourteen required WebMCP read/draft tools are implemented with AbortController lifecycle cleanup and no commit/delete/export/history/SQL tool. Local unit coverage is 9 files / 24 tests and ordinary-form browser regression remains 3 tests. In the supported in-app browser against the `codex/wave5-webmcp` Vercel preview, an isolated fictional user authenticated successfully; the daily and weekly seven-tool surfaces discovered, oversized input was rejected, draft mutations visibly recorded non-committing audit entries, and the tools disappeared off ritual routes. A direct ledger check confirmed the daily and weekly sessions remained drafts.
 
 ## Evidence already established
 
-- PR #12 (`09f4fae`) merged Wave 6. All six tracked Supabase migrations, including the reminder delivery RPC contract, are applied to production.
+- PR #15 (`7c4009b`) merged the judge demo. All seven tracked Supabase migrations are applied to production, and remote error-level lint passes.
+- PR #12 (`09f4fae`) merged Wave 6, including the reminder delivery RPC contract.
 - Public signup and the demo entry point are Turnstile-protected, with the challenge verified by Supabase Auth. Browser-visible configuration contains only the Turnstile site key.
 - The deployed `gyst-reminders` Worker has the UTC `*/15 * * * *` cron trigger. It is stateless; idempotency and delivery state live only in Supabase `notification_events`.
 - Resend is connected and `geekindad.com` is verified. One approved real-recipient test was accepted and reported delivered. The test reached Gmail spam, so future sender-reputation/DMARC work remains an operational follow-up.
