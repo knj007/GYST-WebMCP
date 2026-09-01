@@ -5,6 +5,15 @@ import { getWeeklyRitual } from "@/lib/rituals/weekly";
 import { enumValue, requireObject, requiredText, weeklyArrows } from "@/lib/webmcp/contracts";
 
 const idle = { message: "", status: "idle" } as const;
+function draftUpdated(ritual: Awaited<ReturnType<typeof getWeeklyRitual>>, fields: string[]) {
+  return NextResponse.json({
+    effect: `Updated ${fields.join(", ")} in the visible weekly draft. The record remains uncommitted and requires the owner’s review.`,
+    message: "Draft updated. It was not committed.",
+    uncommitted: true as const,
+    updated_fields: fields,
+    week_start: ritual.periodStart,
+  });
+}
 function lines(values: string[]) { return values.join("\n"); }
 function asStringList(value: unknown): string[] { return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : []; }
 function asPriorities(value: unknown): Array<{ due_on: string; title: string }> {
@@ -31,19 +40,22 @@ export async function POST(request: Request) {
     const { action, input } = requireObject(await request.json()); const ritual = await getWeeklyRitual();
     if (ritual.session?.status === "committed") throw new Error("This weekly ritual is already committed.");
     const form = formFor(ritual); const values = requireObject(input);
+    let updatedFields: string[];
     switch (action) {
-      case "record_missing_metric": form.set("missing_metrics", lines(stringList(values.items, "items", 12, 500))); break;
-      case "record_weekly_observation": form.set("observations", lines(stringList(values.items, "items", 12, 2000))); break;
-      case "set_weekly_decision": form.set("decision_text", requiredText(values.text, 12000, "text")); break;
-      case "set_weekly_arrow": form.set("arrow", enumValue(values.arrow, weeklyArrows, "arrow")); break;
+      case "record_missing_metric": form.set("missing_metrics", lines(stringList(values.items, "items", 12, 500))); updatedFields = ["missing_metrics"]; break;
+      case "record_weekly_observation": form.set("observations", lines(stringList(values.items, "items", 12, 2000))); updatedFields = ["observations"]; break;
+      case "set_weekly_decision": form.set("decision_text", requiredText(values.text, 12000, "text")); updatedFields = ["decision_text"]; break;
+      case "set_weekly_arrow": form.set("arrow", enumValue(values.arrow, weeklyArrows, "arrow")); updatedFields = ["arrow"]; break;
       case "set_weekly_priority": {
         const priorities = values.priorities;
         if (!Array.isArray(priorities) || priorities.length > 5) throw new Error("priorities must contain at most 5 items.");
-        form.set("priorities", priorities.map((item) => { const priority = requireObject(item); const title = requiredText(priority.title, 500, "priority title"); const dueOn = requiredText(priority.due_on, 10, "priority due_on"); if (!/^\d{4}-\d{2}-\d{2}$/.test(dueOn)) throw new Error("priority due_on must use YYYY-MM-DD."); return `${title} | ${dueOn}`; }).join("\n")); break;
+        form.set("priorities", priorities.map((item) => { const priority = requireObject(item); const title = requiredText(priority.title, 500, "priority title"); const dueOn = requiredText(priority.due_on, 10, "priority due_on"); if (!/^\d{4}-\d{2}-\d{2}$/.test(dueOn)) throw new Error("priority due_on must use YYYY-MM-DD."); return `${title} | ${dueOn}`; }).join("\n"));
+        updatedFields = ["priorities"];
+        break;
       }
       default: throw new Error("Unsupported weekly draft tool.");
     }
     const result = await saveWeeklyDraft(idle, form); if (result.status === "error") throw new Error(result.message);
-    return NextResponse.json({ message: "Draft updated. It was not committed.", week_start: ritual.periodStart });
+    return draftUpdated(ritual, updatedFields);
   } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to update the weekly draft." }, { status: 400 }); }
 }

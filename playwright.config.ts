@@ -6,7 +6,10 @@ const localSupabase = getLocalSupabasePublicEnvironment();
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  fullyParallel: true,
+  // Every E2E file uses the same fictional owner created by global setup, so
+  // parallel workers can race a draft/commit against an export assertion.
+  fullyParallel: false,
+  workers: 1,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
   reporter: "list",

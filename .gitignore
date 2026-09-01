@@ -29,6 +29,9 @@ supabase/.branches/
 # This is a public repository, so anything placed here would publish with it.
 docs/product/
 
+# Local release-verification output
+.wave8-verification/
+
 # Operating-system files
 .DS_Store
 Thumbs.db
