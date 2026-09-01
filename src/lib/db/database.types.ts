@@ -665,6 +665,7 @@ export type Database = {
           version: number
         }[]
       }
+      delete_my_account: { Args: never; Returns: undefined }
       get_weekly_context: { Args: { p_week_start: string }; Returns: Json }
       record_reminder_delivery: {
         Args: { p_notification_event_id: string; p_provider_message_id: string }

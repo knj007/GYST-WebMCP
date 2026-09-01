@@ -4,14 +4,16 @@ import { signIn } from "@/lib/auth/actions";
 import { readSupabasePublicConfig } from "@/lib/supabase/config";
 
 type LoginPageProps = {
-  searchParams: Promise<{ error?: string; reason?: string }>;
+  searchParams: Promise<{ deleted?: string; error?: string; reason?: string }>;
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const { error, reason } = await searchParams;
+  const { deleted, error, reason } = await searchParams;
   const isConfigured = Boolean(readSupabasePublicConfig());
   const message =
-    reason === "configuration" || !isConfigured
+    deleted === "1"
+      ? "Your account and its ledger records have been permanently deleted."
+      : reason === "configuration" || !isConfigured
       ? "Sign-in is ready, but this environment does not have its public Supabase connection configured."
       : error
         ? "We could not sign you in with those credentials."
