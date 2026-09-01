@@ -23,6 +23,12 @@ next-env.d.ts
 supabase/.temp/
 supabase/.branches/
 
+# Local-only working notes
+#
+# Internal product and architecture assessments stay out of the repository.
+# This is a public repository, so anything placed here would publish with it.
+docs/product/
+
 # Operating-system files
 .DS_Store
 Thumbs.db
