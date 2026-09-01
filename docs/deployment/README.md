@@ -31,6 +31,7 @@ Current production state:
 - Vercel Production holds browser-safe Supabase URL and publishable-key configuration. The app never receives a Supabase secret key.
 - The Resend Marketplace integration supplies `RESEND_API_KEY` to Vercel Production for provider management. The deployed reminder Worker receives its own encrypted Cloudflare secret; no key value is stored in this repository.
 - Daily/weekly ordinary flows and fourteen draft/read-only WebMCP tools are merged and deployed. WebMCP still cannot commit or delete ledger records.
+- Wave 6.5 adds a signed-in `/settings/schedule` page for daily and weekly ritual reminders. The matching forward-only Supabase migration was applied before the PR merge because the Git integration deploys `main`. The Worker delivery contract, encrypted secrets, and Cron Trigger are unchanged.
 - Current release evidence is [production-judge-demo-evidence-2026-09-01.md](production-judge-demo-evidence-2026-09-01.md). The Wave 6 record at [production-wave6-evidence-2026-09-01.md](production-wave6-evidence-2026-09-01.md) and the dated A5/A9 record remain historical evidence for their narrower scopes.
 
 ## Auth gate verification (run before every release)

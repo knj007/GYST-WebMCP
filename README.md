@@ -6,20 +6,21 @@ GYST is a human-owned daily and weekly ritual ledger. The application can read b
 
 Last verified — 2026-09-01:
 
-- Production is [gyst-web-mcp.vercel.app](https://gyst-web-mcp.vercel.app). `main` includes Wave 6 through merge commit `09f4fae` (PR #12).
+- Production is [gyst-web-mcp.vercel.app](https://gyst-web-mcp.vercel.app). The judge demo release is `7c4009b`; Wave 6.5 ships user-owned reminder schedules with PR #18.
 - A judge or reviewer can open the product without an account, verified live in production on 2026-09-01. "Open the demo" signs the visitor in anonymously behind Turnstile and seeds a fictional ledger scoped to that throwaway identity: a full prior week of committed days, its detected patterns, and today left open to conduct. Every visitor gets a separate ledger, so one visitor's commit never changes what the next one sees, and no shared demo credential exists to distribute or maintain.
 - The demo's fictional data is generated relative to the current week at call time, so it never goes stale. `supabase/seed.sql` drives the same RPC rather than restating the persona.
-- Hosted Supabase has all seven tracked migrations through `20260901035852_demo_ledger_seed.sql`. Remote history matches local and remote error-level lint reports no schema errors. The ledger remains the only durable application record; the Worker is stateless and may only claim/reconcile notification events through narrow service-role RPCs.
+- Hosted Supabase has all eight tracked migrations through `20260901135156_ritual_reminder_schedule.sql`. Remote history matches local and remote error-level lint reports no schema errors. The ledger remains the only durable application record; the Worker is stateless and may only claim/reconcile notification events through narrow service-role RPCs.
 - Public signup and the demo entry point both use Cloudflare Turnstile, verified by Supabase Auth rather than by the application. The browser receives only the site key; the secret lives in Supabase Auth configuration. Supabase Auth has anonymous sign-ins and CAPTCHA protection enabled, and both were confirmed against the running project.
 - The `gyst-reminders` Cloudflare Worker is deployed with a UTC `*/15 * * * *` Cron Trigger. It has no D1, KV, R2, or ledger-write capability outside the reviewed Supabase reminder RPCs.
 - Resend is connected to Production and `geekindad.com` is verified. The Worker uses a server-only From address. A one-message real-recipient delivery test was accepted and reported delivered by Resend.
 - Legacy Supabase `anon` and `service_role` JWT keys are disabled. The application uses the publishable key and the Worker uses the newer secret key, both held only in provider configuration.
 - Wave 5's fourteen WebMCP tools remain draft/read-only. They cannot commit or delete ledger records; normal human commit controls remain separate.
-- Local verification passes 240 pgTAP assertions, 75 Vitest tests, app and Worker type checks, lint, production build, Worker dry-run, and Supabase lint. Three of five Playwright specs pass; see the known defect below.
+- Signed-in owners can configure, pause, and resume daily and weekly ritual email reminders from `/settings/schedule`. Schedules use the owner's profile timezone; first use safely initializes that profile from the browser timezone. The browser role calls one owner-scoped `SECURITY INVOKER` RPC, while the Worker remains the only delivery actor.
+- Local verification passes 258 pgTAP assertions, 83 Vitest tests, app and Worker type checks, lint, production build, Worker dry-run, Supabase lint, and all five Playwright specs.
 
-### Known defect
+### Draft-save acknowledgement
 
-Saving a daily or weekly draft persists correctly but renders no confirmation message. The record is written and survives a reload; only the on-screen acknowledgement is missing. This predates the judge demo work and is reproducible on `main`. It is the cause of the two failing Playwright specs.
+Saving a daily or weekly draft now leaves its confirmation message visible. The save remains editable and does not commit the ledger record.
 
 Current release evidence is [docs/deployment/production-judge-demo-evidence-2026-09-01.md](docs/deployment/production-judge-demo-evidence-2026-09-01.md). Historical production activation evidence is retained in [docs/deployment/production-a5-a9-evidence-2026-08-30.md](docs/deployment/production-a5-a9-evidence-2026-08-30.md); it records the narrower 2026-08-30 scope and is not the current status.
 
