@@ -9,7 +9,7 @@ type ReminderEnv = ReminderSecrets;
 type ClaimedReminder = { notification_event_id: string; reminder_rule_id: string; recipient_email: string; scheduled_for: string };
 type ResendResponse = { id: string };
 
-const MAX_BATCH_SIZE = 25;
+const MAX_BATCH_SIZE = 10;
 const CLAIM_TIMEOUT_SECONDS = 15 * 60;
 
 function requireReminderSecrets(env: unknown): asserts env is ReminderEnv {
@@ -60,7 +60,7 @@ export async function deliverDueReminders(env: unknown, now = new Date()): Promi
   requireReminderSecrets(env);
   const claimed = await postRpc(env, "claim_due_reminder_notifications", { p_now: now.toISOString(), p_batch_size: MAX_BATCH_SIZE, p_claim_timeout_seconds: CLAIM_TIMEOUT_SECONDS });
   if (!Array.isArray(claimed) || !claimed.every(isClaimedReminder)) throw new Error("invalid_reminder_claim_response");
-  await Promise.all(claimed.map(async (reminder) => {
+  for (const reminder of claimed) {
     try {
       const active = await postRpc(env, "reminder_claim_is_active", { p_notification_event_id: reminder.notification_event_id });
       if (active !== true) return;
@@ -73,5 +73,5 @@ export async function deliverDueReminders(env: unknown, now = new Date()): Promi
         console.error(JSON.stringify({ message: "reminder_failure_recording_failed", eventId: reminder.notification_event_id, error: errorCode(recordError) }));
       }
     }
-  }));
+  }
 }

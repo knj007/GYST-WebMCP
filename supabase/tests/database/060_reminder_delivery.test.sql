@@ -1,6 +1,6 @@
 begin;
 
-select plan(23);
+select plan(33);
 
 insert into auth.users (id, email) values
   ('77777777-7777-4777-8777-777777777777', 'reminder-owner@example.test'),
@@ -51,6 +51,31 @@ select is((select count(*) from public.claim_due_reminder_notifications('2026-03
 select is((select attempt_count from public.notification_events where reminder_rule_id = 'b7000000-0000-4000-8000-000000000005'), 2, 'retry claim increments the durable attempt count');
 select lives_ok($$select public.record_reminder_delivery((select id from public.notification_events where reminder_rule_id = 'b7000000-0000-4000-8000-000000000005'), 'provider-message-retry')$$, 'a retried delivery reconciles successfully');
 select is((select status::text from public.notification_events where reminder_rule_id = 'b7000000-0000-4000-8000-000000000005'), 'sent', 'retried delivery ends in sent state');
+
+select lives_ok($$update public.reminder_rules set enabled = false where id in ('b7000000-0000-4000-8000-000000000001', 'b7000000-0000-4000-8000-000000000005')$$, 'test setup disables unrelated recurring rules before late skip checks');
+select is((select count(*) from public.claim_due_reminder_notifications('2026-03-09 14:15+00', 25, 900)), 0::bigint, 'a delayed scheduler still suppresses an occurrence skipped on its scheduled local date');
+select is((select count(*) from public.notification_events where reminder_rule_id = 'b7000000-0000-4000-8000-000000000004'), 0::bigint, 'late scheduling never materializes the planned-skip occurrence');
+
+insert into public.commitments (id, user_id, title) values
+  ('c7000000-0000-4000-8000-000000000002', '77777777-7777-4777-8777-777777777777', 'Fictional retry skip commitment');
+insert into public.reminder_rules (id, user_id, commitment_id, cadence, local_time, timezone, next_run_at, enabled) values
+  ('b7000000-0000-4000-8000-000000000006', '77777777-7777-4777-8777-777777777777', 'c7000000-0000-4000-8000-000000000002', 'daily', '09:00', 'America/Chicago', '2026-03-08 14:00+00', true);
+select is((select count(*) from public.claim_due_reminder_notifications('2026-03-08 14:15+00', 25, 900)), 1::bigint, 'a non-skipped occurrence can be claimed before a later skip is recorded');
+select ok(public.record_reminder_failure((select id from public.notification_events where reminder_rule_id = 'b7000000-0000-4000-8000-000000000006'), 'resend_503'), 'the materialized occurrence can enter retriable failed state');
+insert into public.commitment_events (user_id, commitment_id, kind, outcome, title_snapshot, event_on) values
+  ('77777777-7777-4777-8777-777777777777', 'c7000000-0000-4000-8000-000000000002', 'planned_skip', 'planned_skip', 'Fictional retry skip commitment', '2026-03-08');
+select is((select count(*) from public.claim_due_reminder_notifications('2026-03-09 14:15+00', 25, 900)), 0::bigint, 'a planned skip recorded after failure suppresses the retry');
+select is((select status::text from public.notification_events where reminder_rule_id = 'b7000000-0000-4000-8000-000000000006'), 'cancelled', 'a suppressed retry is durably cancelled in the ledger');
+
+insert into public.commitments (id, user_id, title) values
+  ('c7000000-0000-4000-8000-000000000003', '77777777-7777-4777-8777-777777777777', 'Fictional claimed skip commitment');
+insert into public.reminder_rules (id, user_id, commitment_id, cadence, local_time, timezone, next_run_at, enabled) values
+  ('b7000000-0000-4000-8000-000000000007', '77777777-7777-4777-8777-777777777777', 'c7000000-0000-4000-8000-000000000003', 'daily', '09:00', 'America/Chicago', '2026-03-08 14:00+00', true);
+select is((select count(*) from public.claim_due_reminder_notifications('2026-03-08 14:15+00', 25, 900)), 1::bigint, 'a second non-skipped occurrence can be claimed');
+insert into public.commitment_events (user_id, commitment_id, kind, outcome, title_snapshot, event_on) values
+  ('77777777-7777-4777-8777-777777777777', 'c7000000-0000-4000-8000-000000000003', 'planned_skip', 'planned_skip', 'Fictional claimed skip commitment', '2026-03-08');
+select ok(not public.reminder_claim_is_active((select id from public.notification_events where reminder_rule_id = 'b7000000-0000-4000-8000-000000000007')), 'a skip recorded after claim stops the pre-send active check');
+select is((select status::text from public.notification_events where reminder_rule_id = 'b7000000-0000-4000-8000-000000000007'), 'cancelled', 'a claimed occurrence suppressed before send is durably cancelled');
 
 select * from finish();
 rollback;

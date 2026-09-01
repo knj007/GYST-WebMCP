@@ -13,6 +13,7 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "workers/reminders/worker-configuration.d.ts",
+    "workers/reminders/.wrangler/**",
   ]),
 ]);
 

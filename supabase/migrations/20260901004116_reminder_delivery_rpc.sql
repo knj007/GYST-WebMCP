@@ -69,7 +69,7 @@ begin
         where event.user_id = rule.user_id
           and event.commitment_id = rule.commitment_id
           and event.outcome = 'planned_skip'::public.commitment_outcome
-          and event.event_on = (p_now at time zone rule.timezone)::date
+          and event.event_on = (rule.next_run_at at time zone rule.timezone)::date
      )
   on conflict on constraint notification_events_rule_schedule_key do nothing;
 
@@ -85,9 +85,27 @@ begin
    where event.user_id = rule.user_id
      and event.reminder_rule_id = rule.id
      and event.status = 'claimed'::public.notification_status
-     and event.claimed_at < p_now - make_interval(secs => p_claim_timeout_seconds)
+     and event.claimed_at <= p_now - make_interval(secs => p_claim_timeout_seconds)
      and rule.enabled
      and rule.next_run_at = event.scheduled_for;
+
+  -- A planned skip can be recorded after the occurrence was materialized or a
+  -- provider failure was logged. Cancel it durably before it can be retried.
+  update public.notification_events as event
+     set status = 'cancelled'::public.notification_status,
+         version = event.version + 1
+    from public.reminder_rules as rule
+   where event.user_id = rule.user_id
+     and event.reminder_rule_id = rule.id
+     and event.status in ('pending'::public.notification_status, 'failed'::public.notification_status)
+     and exists (
+       select 1
+         from public.commitment_events as skip_event
+        where skip_event.user_id = rule.user_id
+          and skip_event.commitment_id = rule.commitment_id
+          and skip_event.outcome = 'planned_skip'::public.commitment_outcome
+          and skip_event.event_on = (event.scheduled_for at time zone rule.timezone)::date
+     );
 
   return query
   with candidates as (
@@ -125,12 +143,29 @@ $$;
 
 create function public.reminder_claim_is_active(p_notification_event_id uuid)
 returns boolean
-language sql
-stable
+language plpgsql
 security invoker
 set search_path = ''
 as $$
-  select exists (
+begin
+  update public.notification_events as event
+     set status = 'cancelled'::public.notification_status,
+         version = event.version + 1
+    from public.reminder_rules as rule
+   where event.id = p_notification_event_id
+     and event.user_id = rule.user_id
+     and event.reminder_rule_id = rule.id
+     and event.status = 'claimed'::public.notification_status
+     and exists (
+       select 1
+         from public.commitment_events as skip_event
+        where skip_event.user_id = rule.user_id
+          and skip_event.commitment_id = rule.commitment_id
+          and skip_event.outcome = 'planned_skip'::public.commitment_outcome
+          and skip_event.event_on = (event.scheduled_for at time zone rule.timezone)::date
+     );
+
+  return exists (
     select 1
       from public.notification_events as event
       join public.reminder_rules as rule
@@ -139,8 +174,9 @@ as $$
      where event.id = p_notification_event_id
        and event.status = 'claimed'::public.notification_status
        and rule.enabled
-       and rule.next_run_at = event.scheduled_for
+        and rule.next_run_at = event.scheduled_for
   );
+end;
 $$;
 
 create function public.record_reminder_delivery(
