@@ -7,13 +7,19 @@ GYST is a human-owned daily and weekly ritual ledger. The application can read b
 Last verified — 2026-09-01:
 
 - Production is [gyst-web-mcp.vercel.app](https://gyst-web-mcp.vercel.app). `main` includes Wave 6 through merge commit `09f4fae` (PR #12).
-- Hosted Supabase has all six tracked migrations through `20260901004116_reminder_delivery_rpc.sql`. The ledger remains the only durable application record; the Worker is stateless and may only claim/reconcile notification events through narrow service-role RPCs.
-- Public signup uses Cloudflare Turnstile. Tokens are verified server-side before Supabase Auth signup; the browser receives only the site key.
+- A judge or reviewer can open the product without an account. "Open the demo" signs the visitor in anonymously behind Turnstile and seeds a fictional ledger scoped to that throwaway identity: a full prior week of committed days, its detected patterns, and today left open to conduct. Every visitor gets a separate ledger, so one visitor's commit never changes what the next one sees, and no shared demo credential exists to distribute or maintain.
+- The demo's fictional data is generated relative to the current week at call time, so it never goes stale. `supabase/seed.sql` drives the same RPC rather than restating the persona.
+- Hosted Supabase has the six Wave 6 migrations through `20260901004116_reminder_delivery_rpc.sql`. `20260901035852_demo_ledger_seed.sql` is the seventh tracked migration and is pending its remote gate. The ledger remains the only durable application record; the Worker is stateless and may only claim/reconcile notification events through narrow service-role RPCs.
+- Public signup and the demo entry point both use Cloudflare Turnstile, verified by Supabase Auth. The browser receives only the site key; the secret lives in Supabase Auth configuration, not in the application.
 - The `gyst-reminders` Cloudflare Worker is deployed with a UTC `*/15 * * * *` Cron Trigger. It has no D1, KV, R2, or ledger-write capability outside the reviewed Supabase reminder RPCs.
 - Resend is connected to Production and `geekindad.com` is verified. The Worker uses a server-only From address. A one-message real-recipient delivery test was accepted and reported delivered by Resend.
 - Legacy Supabase `anon` and `service_role` JWT keys are disabled. The application uses the publishable key and the Worker uses the newer secret key, both held only in provider configuration.
 - Wave 5's fourteen WebMCP tools remain draft/read-only. They cannot commit or delete ledger records; normal human commit controls remain separate.
-- Local release verification for Wave 6 passed 214 pgTAP assertions, 49 Vitest tests, app and Worker type checks, lint, production build, Worker dry-run, and Supabase lint/advisors.
+- Local verification passes 239 pgTAP assertions, 71 Vitest tests, app and Worker type checks, lint, production build, Worker dry-run, and Supabase lint. Three of five Playwright specs pass; see the known defect below.
+
+### Known defect
+
+Saving a daily or weekly draft persists correctly but renders no confirmation message. The record is written and survives a reload; only the on-screen acknowledgement is missing. This predates the judge demo work and is reproducible on `main`. It is the cause of the two failing Playwright specs.
 
 Historical production activation evidence is retained in [docs/deployment/production-a5-a9-evidence-2026-08-30.md](docs/deployment/production-a5-a9-evidence-2026-08-30.md); it records the narrower 2026-08-30 scope and is not the current status.
 

@@ -1,82 +1,80 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
-import { signUpWithVerifiedTurnstile } from "@/lib/auth/signup";
+import { isSignupConfigured, signUpWithTurnstile } from "@/lib/auth/signup";
 
 const input = {
   email: " person@example.test ",
-  expectedHostname: "gyst-web-mcp.vercel.app",
   password: "an-example-password",
   turnstileToken: "valid-token",
 };
 
-function dependencies(response: Response | Error) {
+function dependencies() {
   const signUp = vi.fn().mockResolvedValue({ error: null });
-  return {
-    createClient: vi.fn().mockResolvedValue({ auth: { signUp } }),
-    fetch: vi.fn().mockImplementation(async () => {
-      if (response instanceof Error) {
-        throw response;
-      }
-      return response;
-    }),
-    secret: "server-only-test-secret",
-    signUp,
-  };
-}
-
-function siteverify(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), { status });
+  return { createClient: vi.fn().mockResolvedValue({ auth: { signUp } }), signUp };
 }
 
 describe("Turnstile-protected signup", () => {
   beforeEach(() => vi.restoreAllMocks());
 
-  test("rejects a missing token before Siteverify or Auth", async () => {
-    const deps = dependencies(siteverify({ success: true, hostname: input.expectedHostname }));
-    await expect(signUpWithVerifiedTurnstile({ ...input, turnstileToken: "" }, deps)).resolves.toEqual({ code: "challenge", ok: false });
-    expect(deps.fetch).not.toHaveBeenCalled();
+  test("rejects a missing token before reaching Auth", async () => {
+    const deps = dependencies();
+    await expect(signUpWithTurnstile({ ...input, turnstileToken: "" }, deps)).resolves.toEqual({
+      code: "challenge",
+      ok: false,
+    });
+    expect(deps.signUp).not.toHaveBeenCalled();
+  });
+
+  test("rejects an oversized token before reaching Auth", async () => {
+    const deps = dependencies();
+    await expect(
+      signUpWithTurnstile({ ...input, turnstileToken: "t".repeat(2049) }, deps),
+    ).resolves.toEqual({ code: "challenge", ok: false });
     expect(deps.signUp).not.toHaveBeenCalled();
   });
 
   test.each([
-    ["invalid", ["invalid-input-response"]],
-    ["expired", ["timeout-or-duplicate"]],
-    ["replayed", ["timeout-or-duplicate"]],
-  ])("rejects a %s token before Auth signup", async (_name, errorCodes) => {
-    const deps = dependencies(siteverify({ "error-codes": errorCodes, success: false }));
-    await expect(signUpWithVerifiedTurnstile(input, deps)).resolves.toEqual({ code: "challenge", ok: false });
+    ["a missing email", { email: "" }],
+    ["an oversized email", { email: `${"a".repeat(320)}@example.test` }],
+    ["a missing password", { password: "" }],
+    ["a non-string token", { turnstileToken: 42 }],
+  ])("rejects %s before reaching Auth", async (_label, override) => {
+    const deps = dependencies();
+    await expect(signUpWithTurnstile({ ...input, ...override }, deps)).resolves.toEqual({
+      code: "challenge",
+      ok: false,
+    });
     expect(deps.signUp).not.toHaveBeenCalled();
   });
 
-  test("rejects a token issued for another hostname", async () => {
-    const deps = dependencies(siteverify({ hostname: "attacker.example", success: true }));
-    await expect(signUpWithVerifiedTurnstile(input, deps)).resolves.toEqual({ code: "challenge", ok: false });
-    expect(deps.signUp).not.toHaveBeenCalled();
+  test("hands the normalized credentials and the challenge token to Auth", async () => {
+    const deps = dependencies();
+    await expect(signUpWithTurnstile(input, deps)).resolves.toEqual({ code: "success", ok: true });
+    expect(deps.signUp).toHaveBeenCalledWith({
+      email: "person@example.test",
+      options: { captchaToken: "valid-token" },
+      password: "an-example-password",
+    });
   });
 
-  test("fails closed when Siteverify is unavailable", async () => {
-    const deps = dependencies(new Error("network unavailable"));
-    await expect(signUpWithVerifiedTurnstile(input, deps)).resolves.toEqual({ code: "unavailable", ok: false });
-    expect(deps.signUp).not.toHaveBeenCalled();
+  test("reports a rejected challenge as recoverable", async () => {
+    const deps = dependencies();
+    deps.signUp.mockResolvedValueOnce({ error: { message: "captcha protection: request disallowed" } });
+    await expect(signUpWithTurnstile(input, deps)).resolves.toEqual({
+      code: "challenge",
+      ok: false,
+    });
   });
 
-  test("fails closed when the server-only secret is unavailable", async () => {
-    const deps = dependencies(siteverify({ hostname: input.expectedHostname, success: true }));
-    deps.secret = "";
-    await expect(signUpWithVerifiedTurnstile(input, deps)).resolves.toEqual({ code: "configuration", ok: false });
-    expect(deps.fetch).not.toHaveBeenCalled();
-    expect(deps.signUp).not.toHaveBeenCalled();
-  });
-
-  test("calls Auth only after a valid hostname-bound verification", async () => {
-    const deps = dependencies(siteverify({ hostname: input.expectedHostname, success: true }));
-    await expect(signUpWithVerifiedTurnstile(input, deps)).resolves.toEqual({ code: "success", ok: true });
-    expect(deps.signUp).toHaveBeenCalledWith({ email: "person@example.test", password: input.password });
-  });
-
-  test("returns a bounded signup failure after verified challenge", async () => {
-    const deps = dependencies(siteverify({ hostname: input.expectedHostname, success: true }));
+  test("returns a bounded signup failure without echoing provider detail", async () => {
+    const deps = dependencies();
     deps.signUp.mockResolvedValueOnce({ error: { message: "internal provider detail" } });
-    await expect(signUpWithVerifiedTurnstile(input, deps)).resolves.toEqual({ code: "signup", ok: false });
+    await expect(signUpWithTurnstile(input, deps)).resolves.toEqual({ code: "signup", ok: false });
+  });
+
+  test("is configured only when the browser-visible site key is present", () => {
+    expect(isSignupConfigured({} as NodeJS.ProcessEnv)).toBe(false);
+    expect(isSignupConfigured({ NEXT_PUBLIC_TURNSTILE_SITE_KEY: "  " } as unknown as NodeJS.ProcessEnv)).toBe(false);
+    expect(isSignupConfigured({ NEXT_PUBLIC_TURNSTILE_SITE_KEY: "site-key" } as unknown as NodeJS.ProcessEnv)).toBe(true);
   });
 });

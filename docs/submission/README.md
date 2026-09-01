@@ -2,18 +2,26 @@
 
 Last verified: 2026-09-01
 
-Status: Wave 6 signup protection and stateless reminder delivery are merged and deployed to production. Product and submission evidence are still not ready.
+Status: Wave 6 signup protection and stateless reminder delivery are merged and deployed. The judge demo closes the largest remaining submission gap — reaching a populated product without an account — but product and submission evidence are still not complete.
+
+## Judge access
+
+Judges do not need credentials. The public site offers "Open the demo", which signs the visitor in anonymously behind Turnstile and seeds a fictional ledger belonging only to that session: a full committed prior week, its detected patterns, and the current day left open to conduct and commit.
+
+This replaces the shared demo account the plan previously implied. A shared account would have broken after the first judge: `ritual_sessions` is unique on `(user_id, kind, period_start)` and committed sessions are immutable, so the first commit would have left every later judge unable to perform the draft-to-commit demonstration at all. Per-session ledgers also make owner isolation something a judge can observe rather than something the submission asserts.
+
+Two hosted Supabase Auth settings are required and cannot be applied by migration: anonymous sign-ins enabled, and Turnstile captcha enabled. Captcha is the only abuse control on the anonymous sign-in endpoint, which is publicly reachable with the browser's publishable key.
 
 Wave 5 evidence: all fourteen required WebMCP read/draft tools are implemented with AbortController lifecycle cleanup and no commit/delete/export/history/SQL tool. Local unit coverage is 9 files / 24 tests and ordinary-form browser regression remains 3 tests. In the supported in-app browser against the `codex/wave5-webmcp` Vercel preview, an isolated fictional user authenticated successfully; the daily and weekly seven-tool surfaces discovered, oversized input was rejected, draft mutations visibly recorded non-committing audit entries, and the tools disappeared off ritual routes. A direct ledger check confirmed the daily and weekly sessions remained drafts.
 
 ## Evidence already established
 
 - PR #12 (`09f4fae`) merged Wave 6. All six tracked Supabase migrations, including the reminder delivery RPC contract, are applied to production.
-- Public signup is Turnstile-protected with server-side Siteverify before Supabase Auth signup. Browser-visible configuration contains only the Turnstile site key.
+- Public signup and the demo entry point are Turnstile-protected, with the challenge verified by Supabase Auth. Browser-visible configuration contains only the Turnstile site key.
 - The deployed `gyst-reminders` Worker has the UTC `*/15 * * * *` cron trigger. It is stateless; idempotency and delivery state live only in Supabase `notification_events`.
 - Resend is connected and `geekindad.com` is verified. One approved real-recipient test was accepted and reported delivered. The test reached Gmail spam, so future sender-reputation/DMARC work remains an operational follow-up.
 - Legacy Supabase JWT API keys are disabled. Production uses publishable/secret keys, kept in provider configuration only.
-- Current local release evidence passes 6 pgTAP files / 214 assertions, 14 Vitest files / 49 tests, app and Worker type checks, lint, production build, Worker dry-run, and Supabase lint/advisors.
+- Current local evidence passes 7 pgTAP files / 239 assertions, 16 Vitest files / 71 tests, app and Worker type checks, lint, production build, Worker dry-run, and Supabase lint. Three of five Playwright specs pass; the two failures are the pre-existing draft-save defect listed below.
 - PR #6 (`076f1a5`) merged the daily/weekly ordinary-form rituals, bounded weekly findings, and local-only fictional seed. The Wave 4 migration is applied remotely and remote migration history/error-level lint pass; remote advisors have no security/error finding.
 - Local evidence now passes 5 pgTAP files / 177 assertions, 7 Vitest files / 20 tests, 3 Playwright tests, lint, typecheck, and production build.
 - The fictional demo ledger is deterministic and reset-safe but local-only; production has no demo identity or application data.
@@ -32,9 +40,11 @@ Wave 5 evidence: all fourteen required WebMCP read/draft tools are implemented w
 - Supabase Auth custom SMTP for reliable confirmation delivery (tracked separately).
 - Gmail deliverability follow-up: decide on a monitor-only DMARC record and warm the verified sending domain deliberately.
 - Production-level end-to-end evidence of a naturally due reminder, without manufacturing ledger history.
-- Fictional demo ledger and repeatable judge/demo account setup.
+- ~~Fictional demo ledger and repeatable judge/demo account setup.~~ Delivered by the judge demo above.
 - Export and deletion behavior with ownership tests.
 - Full lint, type-check, unit, database, build, E2E, browser, secret, and private-data audit.
+- Fix the pre-existing draft-save defect: daily and weekly drafts persist correctly but render no confirmation message. Two Playwright specs fail on this, on `main`, independent of the judge demo.
+- Decide how the weekly page behaves early in the week. Weekly context is bounded to the current ISO week, so a judge arriving on a Monday sees one finding rather than five. The seeded prior week is complete; only the current-week view is thin.
 - Approved release candidate, production verification, rollback evidence, demo video, and final submission copy.
 
 ## Submission boundary

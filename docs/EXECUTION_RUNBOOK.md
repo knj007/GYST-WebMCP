@@ -56,6 +56,18 @@ The earlier product plan remains the product specification. This runbook is the 
 
 ### 2.1 Current execution checkpoint — 2026-09-01
 
+#### Judge demo update — 2026-09-01
+
+- A visitor can reach a populated fictional ledger in one click, with no account and no shared credential. "Open the demo" performs a Turnstile-protected Supabase anonymous sign-in, then calls `public.seed_demo_ledger()`.
+- Anonymous users take the same `authenticated` Postgres role as permanent users, so the existing 38 owner-only policies apply to them unchanged. No policy was added, relaxed, or rewritten.
+- `seed_demo_ledger()` is `SECURITY INVOKER`. It refuses a permanent account, refuses to overwrite an existing ledger, closes seeded days through the ordinary `draft -> committed` transition, and derives every date from the demo timezone at call time.
+- The anonymous rejection was removed from both `requireUser()` and the proxy. Both layers had it; a demo session now passes both for the same reason a permanent account does.
+- Turnstile verification moved from application-side Siteverify to Supabase Auth for both signup and the demo. The anonymous sign-in endpoint is publicly reachable with the browser's publishable key, so an application-side check could not protect it. `TURNSTILE_SECRET_KEY` is no longer an application variable.
+- `supabase/seed.sql` now drives the same RPC instead of restating the persona with fixed dates.
+- Local verification: 7 pgTAP files / 239 assertions, 16 Vitest files / 71 tests, app and Worker type checks, lint, production build, Worker dry-run, and Supabase lint.
+- Known defect, pre-existing on `main` and unrelated to this work: saving a daily or weekly draft persists correctly but renders no confirmation message. Two Playwright specs fail on it; the remaining three pass.
+- Outstanding gate: hosted Supabase Auth must enable anonymous sign-ins and Turnstile captcha. Neither can be applied by migration, and both must land with or before the deploy.
+
 #### Wave 6 update — 2026-09-01
 
 - PR #12 merged as `09f4fae`; Vercel checks passed and Git integration released `main`.

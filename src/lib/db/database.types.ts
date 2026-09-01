@@ -7,6 +7,31 @@ export type Json =
   | Json[]
 
 export type Database = {
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       areas: {
@@ -608,6 +633,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_due_reminder_notifications: {
+        Args: {
+          p_batch_size?: number
+          p_claim_timeout_seconds?: number
+          p_now: string
+        }
+        Returns: {
+          notification_event_id: string
+          recipient_email: string
+          reminder_rule_id: string
+          scheduled_for: string
+        }[]
+      }
       commit_daily_ritual: {
         Args: { p_expected_version: number; p_ritual_session_id: string }
         Returns: {
@@ -625,6 +663,18 @@ export type Database = {
         }[]
       }
       get_weekly_context: { Args: { p_week_start: string }; Returns: Json }
+      record_reminder_delivery: {
+        Args: { p_notification_event_id: string; p_provider_message_id: string }
+        Returns: boolean
+      }
+      record_reminder_failure: {
+        Args: { p_error_code: string; p_notification_event_id: string }
+        Returns: boolean
+      }
+      reminder_claim_is_active: {
+        Args: { p_notification_event_id: string }
+        Returns: boolean
+      }
       save_daily_ritual_draft: {
         Args: {
           p_draft: Json
@@ -649,6 +699,7 @@ export type Database = {
           version: number
         }[]
       }
+      seed_demo_ledger: { Args: never; Returns: Json }
     }
     Enums: {
       area_status: "active" | "archived"
@@ -813,6 +864,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       area_status: ["active", "archived"],
@@ -859,3 +913,4 @@ export const Constants = {
     },
   },
 } as const
+

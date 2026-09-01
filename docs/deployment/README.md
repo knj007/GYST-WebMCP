@@ -26,7 +26,8 @@ PR #12 merged as `09f4fae` after Vercel checks passed. Vercel Git integration de
 Current production state:
 
 - `/` is healthy; unauthenticated protected routes redirect to `/login`.
-- Public signup is protected by Turnstile. Vercel Production holds `TURNSTILE_SECRET_KEY` as a server-only secret and the browser-safe Turnstile site key as configuration. Values are not documented.
+- Public signup and the judge demo are both protected by Turnstile, verified by Supabase Auth rather than by the application. Vercel Production holds only the browser-safe Turnstile site key; the Turnstile secret belongs in Supabase Auth captcha configuration. Values are not documented.
+- The judge demo signs a visitor in anonymously and seeds a fictional ledger scoped to that throwaway identity. It requires two hosted Supabase Auth settings that no migration can apply: anonymous sign-ins enabled, and Turnstile captcha enabled. Both must land with or before the deploy — the anonymous sign-in endpoint is publicly reachable with the browser's publishable key, so captcha is its only abuse control and an application-side check cannot substitute for it.
 - Vercel Production holds browser-safe Supabase URL and publishable-key configuration. The app never receives a Supabase secret key.
 - The Resend Marketplace integration supplies `RESEND_API_KEY` to Vercel Production for provider management. The deployed reminder Worker receives its own encrypted Cloudflare secret; no key value is stored in this repository.
 - Daily/weekly ordinary flows and fourteen draft/read-only WebMCP tools are merged and deployed. WebMCP still cannot commit or delete ledger records.

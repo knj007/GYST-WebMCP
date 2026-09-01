@@ -30,6 +30,10 @@ export default defineConfig({
       ...process.env,
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: localSupabase.publishableKey,
       NEXT_PUBLIC_SUPABASE_URL: localSupabase.apiUrl,
+      // Cloudflare's documented always-passes Turnstile test site key. It is a
+      // public dummy value, not a secret. The local Supabase stack has captcha
+      // disabled, so the token it issues is accepted and ignored.
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: "1x00000000000000000000AA",
     },
   },
 });
