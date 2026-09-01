@@ -2,9 +2,9 @@
 
 Last verified: 2026-09-01
 
-Status: Wave 6 signup protection and stateless reminder delivery are merged and deployed. The judge demo closes the largest remaining submission gap — reaching a populated product without an account — but product and submission evidence are still not complete.
+Status: Wave 7 ownership, exports, and permanent-account deletion are merged, migrated, and deployed. The judge demo closes the largest remaining submission gap — reaching a populated product without an account — but product and submission evidence are still not complete.
 
-Wave 7 is locally implemented and verified, but not yet approved for remote migration or deployment: permanent-account Settings offers committed-only `gyst-portable-v1` JSON and Markdown archives, an explicit full JSON backup that includes drafts, and deliberate permanent-account deletion. The export endpoints use the caller's owner-scoped session and do not expose a WebMCP export/history tool. Local evidence now includes 9 pgTAP files / 270 assertions, 20 Vitest files / 92 tests, and 6 Playwright specs, including a JSON count comparison against owned local fixture rows.
+Wave 7 is deployed through PR #19 (`2b3571d`). Permanent-account Settings offers committed-only `gyst-portable-v1` JSON and Markdown archives, an explicit full JSON backup that includes drafts, and deliberate permanent-account deletion. The export endpoints use the caller's owner-scoped session and do not expose a WebMCP export/history tool. Migration `20260901155949_add_account_deletion_rpc.sql` is applied; remote migration history and error-level lint pass, and the Git-integrated production deployment is Ready. Local evidence includes 9 pgTAP files / 270 assertions, 20 Vitest files / 92 tests, and 6 Playwright specs, including a two-owner JSON/Markdown isolation check against database fixture rows. No production user was created or deleted to exercise the destructive flow.
 
 ## Judge access
 
@@ -20,7 +20,7 @@ Wave 5 evidence: all fourteen required WebMCP read/draft tools are implemented w
 
 ## Evidence already established
 
-- PR #15 (`7c4009b`) merged the judge demo. All seven tracked Supabase migrations are applied to production, and remote error-level lint passes.
+- PR #19 (`2b3571d`) merged Wave 7. All nine tracked Supabase migrations are applied to production, and remote error-level lint passes.
 - PR #12 (`09f4fae`) merged Wave 6, including the reminder delivery RPC contract.
 - Public signup and the demo entry point are Turnstile-protected, with the challenge verified by Supabase Auth. Browser-visible configuration contains only the Turnstile site key.
 - The deployed `gyst-reminders` Worker has the UTC `*/15 * * * *` cron trigger. It is stateless; idempotency and delivery state live only in Supabase `notification_events`.
@@ -46,7 +46,7 @@ Wave 5 evidence: all fourteen required WebMCP read/draft tools are implemented w
 - Gmail deliverability follow-up: decide on a monitor-only DMARC record and warm the verified sending domain deliberately.
 - Production-level end-to-end evidence of a naturally due reminder, without manufacturing ledger history.
 - ~~Fictional demo ledger and repeatable judge/demo account setup.~~ Delivered by the judge demo above.
-- ~~Export and deletion behavior with ownership tests.~~ Local implementation and verification are complete; hosted migration/deployment and final release evidence still require approval.
+- ~~Export and deletion behavior with ownership tests.~~ Merged, migrated, and deployed; a deliberate isolated production deletion test remains optional release evidence.
 - Full lint, type-check, unit, database, build, E2E, browser, secret, and private-data audit.
 - Decide how the weekly page behaves early in the week. Weekly context is bounded to the current ISO week, so a judge arriving on a Monday sees one finding rather than five. The seeded prior week is complete; only the current-week view is thin.
 - Approved release candidate, production verification, rollback evidence, demo video, and final submission copy.
