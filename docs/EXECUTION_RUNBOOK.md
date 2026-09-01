@@ -64,7 +64,7 @@ The earlier product plan remains the product specification. This runbook is the 
 - The anonymous rejection was removed from both `requireUser()` and the proxy. Both layers had it; a demo session now passes both for the same reason a permanent account does.
 - Turnstile verification moved from application-side Siteverify to Supabase Auth for both signup and the demo. The anonymous sign-in endpoint is publicly reachable with the browser's publishable key, so an application-side check could not protect it. `TURNSTILE_SECRET_KEY` is no longer an application variable.
 - `supabase/seed.sql` now drives the same RPC instead of restating the persona with fixed dates.
-- Local verification: 7 pgTAP files / 239 assertions, 16 Vitest files / 71 tests, app and Worker type checks, lint, production build, Worker dry-run, and Supabase lint.
+- Local verification: 7 pgTAP files / 240 assertions, 16 Vitest files / 75 tests, app and Worker type checks, lint, production build, Worker dry-run, and Supabase lint.
 - Known defect, pre-existing on `main` and unrelated to this work: saving a daily or weekly draft persists correctly but renders no confirmation message. Two Playwright specs fail on it; the remaining three pass.
 - Outstanding gate: hosted Supabase Auth must enable anonymous sign-ins and Turnstile captcha. Neither can be applied by migration, and both must land with or before the deploy.
 
@@ -358,7 +358,7 @@ Tasks:
 10. Establish `.env.example` with names only:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-   - `TURNSTILE_SECRET_KEY`
+   - `TURNSTILE_SECRET_KEY` (superseded: the secret now belongs in Supabase Auth captcha configuration, not in application environment)
    - `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
    - `RESEND_API_KEY`
    - `REMINDER_FROM_EMAIL`

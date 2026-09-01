@@ -10,6 +10,10 @@ export const dynamic = "force-dynamic";
 const responses = {
   challenge: { message: "Complete a fresh verification challenge and try again.", status: 400 },
   seed: { message: "We could not prepare the demo ledger. Please try again.", status: 503 },
+  "signed-in": {
+    message: "You are already signed in. Sign out first to open the demo.",
+    status: 409,
+  },
   unavailable: { message: "The demo is temporarily unavailable. Please try again.", status: 503 },
 } as const;
 

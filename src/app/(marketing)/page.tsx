@@ -1,10 +1,13 @@
 import Link from "next/link";
 
 import { DemoEntryButton } from "@/components/demo-entry-button";
+import { isDemoConfigured } from "@/lib/demo/session";
 import { SiteHeader } from "@/components/site-header";
 
 export default function HomePage() {
-  const demoSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim();
+  const demoSiteKey = isDemoConfigured()
+    ? process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim()
+    : undefined;
 
   return (
     <div className="min-h-screen">

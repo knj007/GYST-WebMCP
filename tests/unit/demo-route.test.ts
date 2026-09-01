@@ -43,6 +43,7 @@ describe("judge demo route", () => {
   test.each([
     ["challenge", 400],
     ["seed", 503],
+    ["signed-in", 409],
     ["unavailable", 503],
   ])("maps a %s result to status %i without a destination", async (code, status) => {
     mocks.startDemoSession.mockResolvedValueOnce({ code, ok: false });

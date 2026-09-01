@@ -15,7 +15,7 @@ Last verified — 2026-09-01:
 - Resend is connected to Production and `geekindad.com` is verified. The Worker uses a server-only From address. A one-message real-recipient delivery test was accepted and reported delivered by Resend.
 - Legacy Supabase `anon` and `service_role` JWT keys are disabled. The application uses the publishable key and the Worker uses the newer secret key, both held only in provider configuration.
 - Wave 5's fourteen WebMCP tools remain draft/read-only. They cannot commit or delete ledger records; normal human commit controls remain separate.
-- Local verification passes 239 pgTAP assertions, 71 Vitest tests, app and Worker type checks, lint, production build, Worker dry-run, and Supabase lint. Three of five Playwright specs pass; see the known defect below.
+- Local verification passes 240 pgTAP assertions, 75 Vitest tests, app and Worker type checks, lint, production build, Worker dry-run, and Supabase lint. Three of five Playwright specs pass; see the known defect below.
 
 ### Known defect
 

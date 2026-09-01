@@ -4,13 +4,19 @@ const maxTokenLength = 2048;
 
 type DemoClient = {
   auth: {
+    getClaims: () => Promise<{
+      data: { claims?: { is_anonymous?: boolean; sub?: string } } | null;
+      error: unknown | null;
+    }>;
     signInAnonymously: (credentials?: {
       options?: { captchaToken?: string };
     }) => Promise<{ error: { message?: string } | null }>;
   };
   // PostgREST builders are thenable rather than real promises, so the
   // contract here is what `await` actually needs.
-  rpc: (name: "seed_demo_ledger") => PromiseLike<{ error: { message?: string } | null }>;
+  rpc: (
+    name: "seed_demo_ledger",
+  ) => PromiseLike<{ data: unknown; error: { message?: string } | null }>;
 };
 
 export type DemoSessionInput = {
@@ -19,7 +25,7 @@ export type DemoSessionInput = {
 
 export type DemoSessionResult =
   | { code: "success"; ok: true }
-  | { code: "challenge" | "seed" | "unavailable"; ok: false };
+  | { code: "challenge" | "seed" | "signed-in" | "unavailable"; ok: false };
 
 export type DemoSessionDependencies = {
   createClient: () => Promise<DemoClient>;
@@ -59,6 +65,15 @@ export async function startDemoSession(
     return { code: "unavailable", ok: false };
   }
 
+  // Signing in anonymously overwrites whatever session cookie is present, so a
+  // signed-in owner would be silently swapped onto a throwaway identity. Their
+  // ledger would survive, but they would be logged out with no explanation.
+  const { data: existing } = await client.auth.getClaims();
+  const existingClaims = existing?.claims;
+  if (typeof existingClaims?.sub === "string" && existingClaims.is_anonymous !== true) {
+    return { code: "signed-in", ok: false };
+  }
+
   const { error: signInError } = await client.auth.signInAnonymously({
     options: { captchaToken: token },
   });
@@ -70,9 +85,11 @@ export async function startDemoSession(
     };
   }
 
-  const { error: seedError } = await client.rpc("seed_demo_ledger");
+  const { data: seeded, error: seedError } = await client.rpc("seed_demo_ledger");
 
-  if (seedError) {
+  // The RPC declines rather than raising when a ledger already exists. Treating
+  // that as success would hand a visitor an empty demo and call it ready.
+  if (seedError || (seeded as { seeded?: boolean } | null)?.seeded !== true) {
     return { code: "seed", ok: false };
   }
 

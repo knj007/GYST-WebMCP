@@ -21,7 +21,7 @@ Wave 5 evidence: all fourteen required WebMCP read/draft tools are implemented w
 - The deployed `gyst-reminders` Worker has the UTC `*/15 * * * *` cron trigger. It is stateless; idempotency and delivery state live only in Supabase `notification_events`.
 - Resend is connected and `geekindad.com` is verified. One approved real-recipient test was accepted and reported delivered. The test reached Gmail spam, so future sender-reputation/DMARC work remains an operational follow-up.
 - Legacy Supabase JWT API keys are disabled. Production uses publishable/secret keys, kept in provider configuration only.
-- Current local evidence passes 7 pgTAP files / 239 assertions, 16 Vitest files / 71 tests, app and Worker type checks, lint, production build, Worker dry-run, and Supabase lint. Three of five Playwright specs pass; the two failures are the pre-existing draft-save defect listed below.
+- Current local evidence passes 7 pgTAP files / 240 assertions, 16 Vitest files / 75 tests, app and Worker type checks, lint, production build, Worker dry-run, and Supabase lint. Three of five Playwright specs pass; the two failures are the pre-existing draft-save defect listed below.
 - PR #6 (`076f1a5`) merged the daily/weekly ordinary-form rituals, bounded weekly findings, and local-only fictional seed. The Wave 4 migration is applied remotely and remote migration history/error-level lint pass; remote advisors have no security/error finding.
 - Local evidence now passes 5 pgTAP files / 177 assertions, 7 Vitest files / 20 tests, 3 Playwright tests, lint, typecheck, and production build.
 - The fictional demo ledger is deterministic and reset-safe but local-only; production has no demo identity or application data.

@@ -23,7 +23,7 @@ declare global {
   }
 }
 
-const demoDestinations = ["/daily", "/weekly"] as const;
+const demoDestinations = ["/daily"] as const;
 
 export function DemoEntryButton({ siteKey }: { siteKey: string }) {
   const router = useRouter();

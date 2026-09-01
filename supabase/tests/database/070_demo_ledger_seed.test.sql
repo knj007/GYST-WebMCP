@@ -1,6 +1,6 @@
 begin;
 
-select plan(25);
+select plan(26);
 
 -- Two throwaway demo identities and one permanent identity. Claims are set as a
 -- full JWT payload because the seed RPC reads the is_anonymous claim, which
@@ -124,6 +124,26 @@ select is(
   ),
   0::bigint,
   'no seeded commitment event is dated today or later'
+);
+
+-- The carried promise and the promise scored the next day must be the same
+-- record, or the demo ledger tells a story whose causality does not close.
+select is(
+  (
+    with closed_day as (
+      select session.period_start, entry.previous_commitment_id, entry.next_commitment_id,
+             lead(entry.previous_commitment_id) over (order by session.period_start) as next_day_scored
+        from public.daily_entries as entry
+        join public.ritual_sessions as session
+          on session.user_id = entry.user_id and session.id = entry.ritual_session_id
+       where session.kind = 'daily'
+    )
+    select count(*) from closed_day
+     where next_day_scored is not null
+       and next_commitment_id is distinct from next_day_scored
+  ),
+  0::bigint,
+  'each seeded day carries the commitment the following day scores'
 );
 
 select is(

@@ -31,30 +31,37 @@ test("a visitor opens a populated demo ledger in one click and no account", asyn
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Read before you ask.");
 });
 
-test("each demo visitor receives a separate ledger", async ({ browser }) => {
-  const contexts = await Promise.all([browser.newContext(), browser.newContext()]);
+test("one demo visitor's writes are invisible to another", async ({ browser }) => {
+  const draft = "Only the first demo session wrote this.";
 
-  const userIds = await Promise.all(
-    contexts.map(async (context) => {
-      const page = await context.newPage();
-      await page.goto("/");
-      const openDemo = page.getByRole("button", { name: "Open the demo" });
-      await expect(openDemo).toBeEnabled({ timeout: 30_000 });
-      await openDemo.click();
-      await expect(page).toHaveURL(/\/daily$/);
+  async function openDemo(context: import("@playwright/test").BrowserContext) {
+    const page = await context.newPage();
+    await page.goto("/");
+    const openDemoButton = page.getByRole("button", { name: "Open the demo" });
+    await expect(openDemoButton).toBeEnabled({ timeout: 30_000 });
+    await openDemoButton.click();
+    await expect(page).toHaveURL(/\/daily$/);
+    return page;
+  }
 
-      // The Supabase session cookie carries the demo identity. Two independent
-      // visitors must never share one.
-      const cookies = await context.cookies();
-      return cookies
-        .filter((cookie) => cookie.name.startsWith("sb-"))
-        .map((cookie) => cookie.value)
-        .join("|");
-    }),
-  );
+  const [first, second] = await Promise.all([browser.newContext(), browser.newContext()]);
+  const firstPage = await openDemo(first);
 
-  expect(userIds[0]).not.toBe("");
-  expect(userIds[0]).not.toBe(userIds[1]);
+  // Saving is the write path this suite can rely on: the draft persists even
+  // though its confirmation message does not render (a defect that predates the
+  // judge demo). A reload proves the write landed.
+  await firstPage.getByLabel("What moved today?").fill(draft);
+  await firstPage.getByRole("button", { name: "Save draft" }).click();
+  await firstPage.reload();
+  await expect(firstPage.getByLabel("What moved today?")).toHaveValue(draft);
 
-  await Promise.all(contexts.map((context) => context.close()));
+  // The second visitor must see an untouched ledger, not the first one's draft.
+  const secondPage = await openDemo(second);
+  await expect(secondPage.getByLabel("What moved today?")).toHaveValue("");
+
+  // And the first visitor still has their own work.
+  await firstPage.reload();
+  await expect(firstPage.getByLabel("What moved today?")).toHaveValue(draft);
+
+  await Promise.all([first.close(), second.close()]);
 });

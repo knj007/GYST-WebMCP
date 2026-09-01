@@ -102,9 +102,15 @@ begin
 
   -- Only days that have already happened are closed. Today is deliberately
   -- left open so the demo session conducts and commits its own ritual.
+  --
+  -- Each day's next commitment is the one the following day scores, so the
+  -- carried promise and the promise kept are the same record. A reader who
+  -- follows the chain finds it closes; the last closed day hands its action to
+  -- the open day, which is the one the demo session decides.
   for v_day in
     select day.day_on, day.moved_text, day.blocker_text, day.blocker_type,
-           day.previous_commitment_id, day.previous_outcome, day.buried_win
+           day.previous_commitment_id, day.previous_outcome,
+           day.next_commitment_id, day.buried_win
       from (
         values
           -- Last week is seeded as a complete week so the ledger always holds
@@ -113,58 +119,58 @@ begin
           (
             v_last_week_start, 'Mapped the imaginary chapter outline.',
             'Waiting on the fictional review board.', 'external_gate'::public.blocker_type,
-            v_commitment_chapter, 'partial'::public.commitment_outcome,
+            v_commitment_chapter, 'partial'::public.commitment_outcome, v_commitment_chapter,
             'A reader called the margin notes the best part; that was not the plan.'::text
           ),
           (
             v_last_week_start + 1, 'Rebuilt the imaginary sample spread.',
             'Waiting on the fictional review board.', 'external_gate'::public.blocker_type,
-            v_commitment_chapter, 'deferred'::public.commitment_outcome, null::text
+            v_commitment_chapter, 'deferred'::public.commitment_outcome, v_commitment_checkin, null::text
           ),
           (
             v_last_week_start + 2, 'Held the imaginary studio review.',
             'Waiting on the fictional review board.', 'external_gate'::public.blocker_type,
-            v_commitment_checkin, 'planned_skip'::public.commitment_outcome, null::text
+            v_commitment_checkin, 'planned_skip'::public.commitment_outcome, v_commitment_archive, null::text
           ),
           (
             v_last_week_start + 3, 'Trimmed the fictional archive backlog.',
             'Short on focused hours.', 'capacity'::public.blocker_type,
-            v_commitment_archive, 'done'::public.commitment_outcome, null::text
+            v_commitment_archive, 'done'::public.commitment_outcome, v_commitment_chapter, null::text
           ),
           (
             v_last_week_start + 4, 'Reordered the imaginary chapter list.',
             'Waiting on the fictional review board.', 'external_gate'::public.blocker_type,
-            v_commitment_chapter, 'not_done'::public.commitment_outcome, null::text
+            v_commitment_chapter, 'not_done'::public.commitment_outcome, v_commitment_chapter, null::text
           ),
           (
             v_week_start, 'Outlined the imaginary accessibility chapter.',
             'Waiting on the fictional review board.', 'external_gate'::public.blocker_type,
-            v_commitment_chapter, 'partial'::public.commitment_outcome,
+            v_commitment_chapter, 'partial'::public.commitment_outcome, v_commitment_chapter,
             'The cardboard prototype survived the rain; keep that exact phrase.'::text
           ),
           (
             v_week_start + 1, 'Reworked the imaginary outline after board feedback.',
             'Waiting on the fictional review board.', 'external_gate'::public.blocker_type,
-            v_commitment_chapter, 'deferred'::public.commitment_outcome, null::text
+            v_commitment_chapter, 'deferred'::public.commitment_outcome, v_commitment_checkin, null::text
           ),
           (
             v_week_start + 2, 'Protected the planned holiday block.',
             'Waiting on the fictional review board.', 'external_gate'::public.blocker_type,
-            v_commitment_checkin, 'planned_skip'::public.commitment_outcome, null::text
+            v_commitment_checkin, 'planned_skip'::public.commitment_outcome, v_commitment_archive, null::text
           ),
           (
             v_week_start + 3, 'Relabeled a fictional archive shelf.',
             'Short on focused hours.', 'capacity'::public.blocker_type,
-            v_commitment_archive, 'done'::public.commitment_outcome, null::text
+            v_commitment_archive, 'done'::public.commitment_outcome, v_commitment_chapter, null::text
           ),
           (
             v_week_start + 4, 'Drafted two imaginary field-guide spreads.',
             'Waiting on the fictional review board.', 'external_gate'::public.blocker_type,
-            v_commitment_chapter, 'not_done'::public.commitment_outcome, null::text
+            v_commitment_chapter, 'not_done'::public.commitment_outcome, v_commitment_next, null::text
           )
       ) as day(
         day_on, moved_text, blocker_text, blocker_type,
-        previous_commitment_id, previous_outcome, buried_win
+        previous_commitment_id, previous_outcome, next_commitment_id, buried_win
       )
      where day.day_on < v_today
      order by day.day_on
@@ -179,7 +185,7 @@ begin
     )
     values (
       v_user_id, v_session_id, v_day.moved_text, v_day.blocker_text, v_day.blocker_type,
-      v_day.previous_commitment_id, v_day.previous_outcome, v_commitment_next, v_day.buried_win
+      v_day.previous_commitment_id, v_day.previous_outcome, v_day.next_commitment_id, v_day.buried_win
     );
 
     update public.ritual_sessions

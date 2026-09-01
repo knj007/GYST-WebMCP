@@ -220,6 +220,13 @@ token_verifications = 30
 web3 = 30
 
 # Configure one of the supported captcha providers: `hcaptcha`, `turnstile`.
+#
+# WARNING: `enable_anonymous_sign_ins` is true above. Leaving this section
+# disabled in a hosted project leaves both the anonymous sign-in endpoint and
+# signup completely unprotected, and it fails OPEN: GoTrue ignores the captcha
+# token the application sends and returns success. Nothing in the application,
+# the test suite, or CI can detect that state. Verify it against the running
+# project before every release using the check in `docs/deployment/README.md`.
 # [auth.captcha]
 # enabled = true
 # provider = "hcaptcha"

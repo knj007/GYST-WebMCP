@@ -4,9 +4,11 @@ import { isDemoConfigured, startDemoSession } from "@/lib/demo/session";
 
 function dependencies() {
   const signInAnonymously = vi.fn().mockResolvedValue({ error: null });
-  const rpc = vi.fn().mockResolvedValue({ error: null });
+  const getClaims = vi.fn().mockResolvedValue({ data: { claims: undefined }, error: null });
+  const rpc = vi.fn().mockResolvedValue({ data: { seeded: true }, error: null });
   return {
-    createClient: vi.fn().mockResolvedValue({ auth: { signInAnonymously }, rpc }),
+    createClient: vi.fn().mockResolvedValue({ auth: { getClaims, signInAnonymously }, rpc }),
+    getClaims,
     rpc,
     signInAnonymously,
   };
@@ -75,6 +77,44 @@ describe("judge demo session", () => {
   test("reports a seeding failure separately from a sign-in failure", async () => {
     const deps = dependencies();
     deps.rpc.mockResolvedValueOnce({ error: { message: "seed failed" } });
+    await expect(startDemoSession({ turnstileToken: "demo-token" }, deps)).resolves.toEqual({
+      code: "seed",
+      ok: false,
+    });
+  });
+
+  test("refuses to replace a signed-in owner's session", async () => {
+    const deps = dependencies();
+    deps.getClaims.mockResolvedValueOnce({
+      data: { claims: { is_anonymous: false, sub: "permanent-owner" } },
+      error: null,
+    });
+    await expect(startDemoSession({ turnstileToken: "demo-token" }, deps)).resolves.toEqual({
+      code: "signed-in",
+      ok: false,
+    });
+    expect(deps.signInAnonymously).not.toHaveBeenCalled();
+    expect(deps.rpc).not.toHaveBeenCalled();
+  });
+
+  test("allows an existing demo session to start a new one", async () => {
+    const deps = dependencies();
+    deps.getClaims.mockResolvedValueOnce({
+      data: { claims: { is_anonymous: true, sub: "old-demo" } },
+      error: null,
+    });
+    await expect(startDemoSession({ turnstileToken: "demo-token" }, deps)).resolves.toEqual({
+      code: "success",
+      ok: true,
+    });
+  });
+
+  test("treats a declined seed as a failure rather than a ready demo", async () => {
+    const deps = dependencies();
+    deps.rpc.mockResolvedValueOnce({
+      data: { reason: "already_prepared", seeded: false },
+      error: null,
+    });
     await expect(startDemoSession({ turnstileToken: "demo-token" }, deps)).resolves.toEqual({
       code: "seed",
       ok: false,

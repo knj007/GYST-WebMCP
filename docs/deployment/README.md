@@ -33,6 +33,33 @@ Current production state:
 - Daily/weekly ordinary flows and fourteen draft/read-only WebMCP tools are merged and deployed. WebMCP still cannot commit or delete ledger records.
 - Current release evidence is [production-wave6-evidence-2026-09-01.md](production-wave6-evidence-2026-09-01.md). The dated A5/A9 record remains historical evidence for its narrower 2026-08-30 activation scope.
 
+## Auth gate verification (run before every release)
+
+The judge demo depends on two hosted Supabase Auth settings that no migration, test, or CI check can observe, and whose absence fails open rather than closed. Verify them against the running project and record the result in the release evidence packet.
+
+```bash
+# 1. Anonymous sign-ins must be ENABLED: expect an access_token, not a 422.
+curl -s -X POST "$SUPABASE_URL/auth/v1/signup"   -H "apikey: $SUPABASE_PUBLISHABLE_KEY" -H "content-type: application/json" -d '{}'
+
+# 2. Captcha must be ENFORCED: expect a rejection, NOT an access_token.
+#    A success here means the endpoint is unprotected.
+curl -s -X POST "$SUPABASE_URL/auth/v1/signup"   -H "apikey: $SUPABASE_PUBLISHABLE_KEY" -H "content-type: application/json"   -d '{"gotrue_meta_security":{"captcha_token":"not-a-real-token"}}'
+```
+
+Delete any anonymous identity these checks create. Both must pass before `main` is merged, because Vercel Git integration deploys `main` on merge.
+
+## Anonymous identity retention
+
+Each demo visit creates one permanent `auth.users` row plus roughly 25-30 ledger rows. Supabase performs no automatic cleanup. Until a scheduled job exists, purge stale demo identities deliberately; the cascade removes their ledger with them.
+
+```sql
+delete from auth.users
+where is_anonymous is true
+  and created_at < now() - interval '7 days';
+```
+
+An anonymous session can also insert its own `reminder_rules` through PostgREST. Those can never send, because the delivery claim requires a non-null `auth.users.email`, but they do accumulate `notification_events` rows that stay `pending`. The purge above removes them.
+
 ## Read-only verification
 
 Vercel CLI 59.10.0 was used for the checkpoint. Pin the CLI version when reproducing release evidence. On this Windows host, the authenticated CLI store is under the existing Vercel configuration directory shown below; the directory contains credentials and must never be inspected or committed.
