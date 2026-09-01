@@ -4,6 +4,8 @@ Last verified: 2026-09-01
 
 Status: Wave 6 signup protection and stateless reminder delivery are merged and deployed. The judge demo closes the largest remaining submission gap — reaching a populated product without an account — but product and submission evidence are still not complete.
 
+Wave 7 is locally implemented and verified, but not yet approved for remote migration or deployment: permanent-account Settings offers committed-only `gyst-portable-v1` JSON and Markdown archives, an explicit full JSON backup that includes drafts, and deliberate permanent-account deletion. The export endpoints use the caller's owner-scoped session and do not expose a WebMCP export/history tool. Local evidence now includes 9 pgTAP files / 270 assertions, 20 Vitest files / 92 tests, and 6 Playwright specs, including a JSON count comparison against owned local fixture rows.
+
 ## Judge access
 
 Judges do not need credentials. The public site offers "Open the demo", which signs the visitor in anonymously behind Turnstile and seeds a fictional ledger belonging only to that session: a full committed prior week, its detected patterns, and the current day left open to conduct and commit.
@@ -44,7 +46,7 @@ Wave 5 evidence: all fourteen required WebMCP read/draft tools are implemented w
 - Gmail deliverability follow-up: decide on a monitor-only DMARC record and warm the verified sending domain deliberately.
 - Production-level end-to-end evidence of a naturally due reminder, without manufacturing ledger history.
 - ~~Fictional demo ledger and repeatable judge/demo account setup.~~ Delivered by the judge demo above.
-- Export and deletion behavior with ownership tests.
+- ~~Export and deletion behavior with ownership tests.~~ Local implementation and verification are complete; hosted migration/deployment and final release evidence still require approval.
 - Full lint, type-check, unit, database, build, E2E, browser, secret, and private-data audit.
 - Decide how the weekly page behaves early in the week. Weekly context is bounded to the current ISO week, so a judge arriving on a Monday sees one finding rather than five. The seeded prior week is complete; only the current-week view is thin.
 - Approved release candidate, production verification, rollback evidence, demo video, and final submission copy.

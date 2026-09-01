@@ -4,6 +4,12 @@ Last verified: 2026-09-01
 
 ## Current state
 
+### Wave 7 ownership and deletion update — 2026-09-01
+
+- Local-only migration `20260901155949_add_account_deletion_rpc.sql` adds `public.delete_my_account()`. It is a zero-argument `SECURITY DEFINER` function with an empty search path, granted only to `authenticated`. It obtains its target solely from `auth.uid()`, refuses an `is_anonymous` JWT claim, and deletes the caller's Auth identity.
+- The RPC reuses the existing `auth.users` cascade marker and immutable-ledger guards. It does not grant a browser role direct Auth-table access or direct delete capability over ledger tables; committed-row cascade remains limited to a whole-account delete transaction.
+- `090_account_deletion_rpc.test.sql` proves authenticated-only execution, demo rejection, self-only deletion, owner-child cascade, and that another owner's rows remain. Full local pgTAP now passes 9 files / 270 assertions. This migration has not been applied to the hosted project.
+
 ### Wave 6.5 reminder-schedule update — 2026-09-01
 
 - `20260901135156_ritual_reminder_schedule.sql` is applied to the hosted project. It adds a narrow, owner-invoker `save_ritual_reminder_schedule()` RPC and an `is_ritual_schedule` marker so user-configured ritual schedules cannot collide with existing commitment or session reminder rules.
@@ -72,6 +78,8 @@ The Data API surface is explicit:
 Authenticated users may create only draft ritual sessions, and ordinary updates must leave them in draft state with no commit timestamp except for a complete daily close. The local daily flow validates required fields and an active owner-owned next commitment at the trigger-level ledger boundary, appends the stable outcome event atomically, and marks the session committed. Draft daily saves write the session version and entry in one optimistic transaction. WebMCP remains limited by its draft-only tool contract rather than an unforgeable database claim about human origin. Draft daily and weekly entries may be edited while their parent session is a draft. After a session is committed, RLS and private trigger functions prevent the session and its entry from being updated or deleted. Stable IDs and ownership columns cannot be changed.
 
 Whole-account deletion remains possible through the `auth.users` cascade. A private Auth deletion trigger marks the affected user IDs transaction-locally, and immutable-ledger guards accept deletes only when both that marker and nested trigger depth prove the delete is part of the cascade. Standalone privileged deletes remain rejected even if the marker is spoofed.
+
+For Wave 7, the ordinary UI invokes only `delete_my_account()` after deliberate confirmation. The database function has no user ID argument, takes the caller from `auth.uid()`, and rejects demo identities. The application clears Supabase session cookies after the identity is removed; no service-role key is introduced into the browser or application export/deletion path.
 
 Indexes cover every foreign-key prefix, every `user_id` RLS filter, bounded weekly lookups, approaching key dates, commitment-event history, due reminder rules, and notification reconciliation paths.
 
