@@ -24,8 +24,8 @@ export default async function WeeklyPage() {
         <h2 id="weekly-findings" className="text-xl font-semibold">What the week shows</h2>
         {ritual.context.findings.length ? <ul className="mt-4 space-y-3">{ritual.context.findings.map((finding) => <li key={finding.id} className="rounded-xl border border-line p-4"><p className="text-sm font-semibold capitalize">{finding.type.replaceAll("_", " ")}</p><p className="mt-1 text-sm text-muted">{findingText(finding)}</p></li>)}</ul> : <p className="mt-3 text-sm text-muted">No structured patterns appeared in this bounded week.</p>}
       </section>
+      {ritual.session?.status !== "committed" ? <WebMcpTools periodStart={ritual.periodStart} ritual="weekly" /> : null}
       <WeeklyRitualForm key={ritual.session?.version ?? "new-weekly-draft"} ritual={ritual} />
-      {ritual.session?.status !== "committed" ? <WebMcpTools ritual="weekly" /> : null}
     </section>
   );
 }
