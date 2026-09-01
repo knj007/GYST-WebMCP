@@ -76,11 +76,11 @@ export async function updateSupabaseSession(request: NextRequest) {
   // gives the cookie adapter a chance to persist a refresh before rendering.
   const { data, error } = await supabase.auth.getClaims();
   const claims = data?.claims;
+  // A demo session is a Supabase anonymous user. It holds a real, owner-scoped
+  // session, so it passes here for the same reason a permanent account does;
+  // the ledger it reaches is its own and nobody else's.
   const isAuthenticated =
-    !error &&
-    typeof claims?.sub === "string" &&
-    claims.sub.length > 0 &&
-    claims.is_anonymous !== true;
+    !error && typeof claims?.sub === "string" && claims.sub.length > 0;
 
   if (isProtectedPath(request.nextUrl.pathname) && !isAuthenticated) {
     return copySessionResponse(supabaseResponse, loginRedirect(request));

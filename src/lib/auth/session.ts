@@ -9,6 +9,11 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export type VerifiedIdentity = {
   email: string | null;
+  // A demo session is a Supabase anonymous user. It takes the same
+  // `authenticated` Postgres role as a permanent account, so every owner-only
+  // policy already applies to it; this flag exists so the interface can say
+  // plainly that the ledger in view is fictional and unrecoverable.
+  isDemo: boolean;
   userId: string;
 };
 
@@ -25,17 +30,13 @@ export const requireUser = cache(async (): Promise<VerifiedIdentity> => {
   const { data, error } = await supabase.auth.getClaims();
   const claims = data?.claims;
 
-  if (
-    error ||
-    typeof claims?.sub !== "string" ||
-    claims.sub.length === 0 ||
-    claims.is_anonymous === true
-  ) {
+  if (error || typeof claims?.sub !== "string" || claims.sub.length === 0) {
     redirect("/login");
   }
 
   return {
     email: typeof claims.email === "string" ? claims.email : null,
+    isDemo: claims.is_anonymous === true,
     userId: claims.sub,
   };
 });

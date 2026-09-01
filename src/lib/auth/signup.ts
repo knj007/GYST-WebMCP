@@ -1,35 +1,29 @@
 import "server-only";
 
-const siteverifyEndpoint = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 const maxTokenLength = 2048;
 
 type SignUpClient = {
   auth: {
-    signUp: (credentials: { email: string; password: string }) => Promise<{ error: unknown | null }>;
+    signUp: (credentials: {
+      email: string;
+      options?: { captchaToken?: string };
+      password: string;
+    }) => Promise<{ error: { message?: string } | null }>;
   };
-};
-
-type SiteverifyResult = {
-  "error-codes"?: string[];
-  hostname?: string;
-  success?: boolean;
 };
 
 export type SignupInput = {
   email: unknown;
-  expectedHostname: string;
   password: unknown;
   turnstileToken: unknown;
 };
 
 export type SignupResult =
   | { code: "success"; ok: true }
-  | { code: "challenge" | "configuration" | "signup" | "unavailable"; ok: false };
+  | { code: "challenge" | "signup"; ok: false };
 
 type SignupDependencies = {
   createClient: () => Promise<SignUpClient>;
-  fetch: typeof globalThis.fetch;
-  secret: string | undefined;
 };
 
 function normalizeEmail(value: unknown) {
@@ -45,63 +39,48 @@ function normalizeToken(value: unknown) {
 }
 
 export function isSignupConfigured(environment: NodeJS.ProcessEnv = process.env) {
-  return Boolean(environment.TURNSTILE_SECRET_KEY?.trim());
+  return Boolean(environment.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim());
 }
 
-export async function signUpWithVerifiedTurnstile(
+/**
+ * Create a permanent account behind a Turnstile challenge.
+ *
+ * The token is verified by Supabase Auth, not here. Supabase applies its
+ * captcha to every auth endpoint, including the anonymous sign-in the judge
+ * demo uses; verifying in the application instead would consume the
+ * single-use token and leave the directly reachable Auth endpoints unguarded.
+ */
+export async function signUpWithTurnstile(
   input: SignupInput,
   dependencies: SignupDependencies,
 ): Promise<SignupResult> {
   const email = normalizeEmail(input.email);
   const password = normalizePassword(input.password);
   const token = normalizeToken(input.turnstileToken);
-  const secret = dependencies.secret?.trim();
 
-  if (!secret) {
-    return { code: "configuration", ok: false };
-  }
-
-  if (!email || email.length > 320 || !password || password.length > 1024 || !token || token.length > maxTokenLength) {
-    return { code: "challenge", ok: false };
-  }
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10_000);
-  const body = new FormData();
-  body.set("secret", secret);
-  body.set("response", token);
-  body.set("idempotency_key", crypto.randomUUID());
-
-  let response: Response;
-  try {
-    response = await dependencies.fetch(siteverifyEndpoint, {
-      body,
-      method: "POST",
-      signal: controller.signal,
-    });
-  } catch {
-    return { code: "unavailable", ok: false };
-  } finally {
-    clearTimeout(timeout);
-  }
-
-  let verification: SiteverifyResult;
-  try {
-    verification = (await response.json()) as SiteverifyResult;
-  } catch {
-    return { code: "unavailable", ok: false };
-  }
-
-  if (!response.ok) {
-    return { code: "unavailable", ok: false };
-  }
-
-  if (!verification.success || verification.hostname !== input.expectedHostname) {
+  if (
+    !email ||
+    email.length > 320 ||
+    !password ||
+    password.length > 1024 ||
+    !token ||
+    token.length > maxTokenLength
+  ) {
     return { code: "challenge", ok: false };
   }
 
   const client = await dependencies.createClient();
-  const { error } = await client.auth.signUp({ email, password });
+  const { error } = await client.auth.signUp({
+    email,
+    options: { captchaToken: token },
+    password,
+  });
 
-  return error ? { code: "signup", ok: false } : { code: "success", ok: true };
+  if (!error) {
+    return { code: "success", ok: true };
+  }
+
+  // A rejected challenge is recoverable by solving a fresh one; anything else
+  // is reported as a signup failure without echoing provider detail.
+  return { code: /captcha/i.test(error.message ?? "") ? "challenge" : "signup", ok: false };
 }

@@ -1,8 +1,14 @@
 import Link from "next/link";
 
+import { DemoEntryButton } from "@/components/demo-entry-button";
+import { isDemoConfigured } from "@/lib/demo/session";
 import { SiteHeader } from "@/components/site-header";
 
 export default function HomePage() {
+  const demoSiteKey = isDemoConfigured()
+    ? process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim()
+    : undefined;
+
   return (
     <div className="min-h-screen">
       <SiteHeader />
@@ -25,6 +31,18 @@ export default function HomePage() {
               Review the week
             </Link>
           </div>
+          {demoSiteKey ? (
+            <div className="mt-12 max-w-md rounded-[1.5rem] border border-line bg-surface p-6">
+              <h2 className="text-lg font-semibold tracking-tight">Look around first</h2>
+              <p className="mt-2 text-sm leading-6 text-muted">
+                Open a private demo with a fictional ledger already in it — a week of history, its
+                patterns, and an open ritual to conduct. No account, no email, nothing to remember.
+              </p>
+              <div className="mt-5">
+                <DemoEntryButton siteKey={demoSiteKey} />
+              </div>
+            </div>
+          ) : null}
         </section>
         <aside className="rounded-[2rem] border border-line bg-surface p-8 shadow-[0_24px_70px_rgba(28,40,34,0.08)]">
           <p className="text-sm font-medium text-muted">The ownership boundary</p>

@@ -174,7 +174,17 @@ refresh_token_reuse_interval = 10
 # Allow/disallow new user signups to your project.
 enable_signup = true
 # Allow/disallow anonymous sign-ins to your project.
-enable_anonymous_sign_ins = false
+# The judge demo signs in anonymously and seeds a fictional ledger scoped to
+# that throwaway identity. Anonymous users take the same `authenticated`
+# Postgres role as permanent users, so every existing owner-only RLS policy
+# applies to them unchanged.
+#
+# Hosted projects MUST also enable [auth.captcha] with the Turnstile provider.
+# The publishable key is browser-visible, so the anonymous sign-in endpoint is
+# publicly reachable and captcha is its only abuse control. Captcha stays off
+# here because the local stack has no Turnstile widget; do not `config push`
+# this section to a hosted project without re-enabling it there.
+enable_anonymous_sign_ins = true
 # Allow/disallow testing manual linking of accounts
 enable_manual_linking = false
 # Passwords shorter than this value will be rejected as weak. Minimum 6, recommended 8 or more.
@@ -210,6 +220,13 @@ token_verifications = 30
 web3 = 30
 
 # Configure one of the supported captcha providers: `hcaptcha`, `turnstile`.
+#
+# WARNING: `enable_anonymous_sign_ins` is true above. Leaving this section
+# disabled in a hosted project leaves both the anonymous sign-in endpoint and
+# signup completely unprotected, and it fails OPEN: GoTrue ignores the captcha
+# token the application sends and returns success. Nothing in the application,
+# the test suite, or CI can detect that state. Verify it against the running
+# project before every release using the check in `docs/deployment/README.md`.
 # [auth.captcha]
 # enabled = true
 # provider = "hcaptcha"

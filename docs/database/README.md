@@ -4,6 +4,21 @@ Last verified: 2026-09-01
 
 ## Current state
 
+### Judge demo update — 2026-09-01
+
+- `20260901035852_demo_ledger_seed.sql` adds `public.seed_demo_ledger()`, the fictional ledger used by the one-click judge demo.
+- The RPC is `SECURITY INVOKER` and holds no elevated authority. It writes nothing the calling owner could not write through the ordinary application path, so the existing owner-only policies are what prove a demo session can only seed itself.
+- It refuses a permanent account outright: seeding requires the `is_anonymous` JWT claim, so fiction can never be written into a real ledger.
+- It refuses to overwrite an existing ledger. A demo session that wants a clean slate takes a new anonymous identity; committed records stay immutable, which is the same guarantee the product makes to every owner.
+- Historical days are closed through the ordinary `draft -> committed` transition, so every seeded `commitment_events` row is appended by the existing ledger triggers rather than inserted directly.
+- All dates derive from a fixed demo timezone evaluated at call time, which the RPC also writes into the demo profile so the application and the seed agree on the day. The seeded week is always the current week and no fixed calendar date appears in the migration.
+- Each seeded day carries the commitment the following day scores, so the promise/kept chain closes; a pgTAP assertion enforces it. The last closed day hands its action to the open day.
+- Anonymous identities are never cleaned up automatically. See the retention section in `docs/deployment/README.md`.
+- `supabase/seed.sql` no longer restates the fictional persona. It creates one anonymous local identity and calls the same RPC, so the local ledger and the deployed demo cannot drift.
+- Anonymous sign-ins are enabled in `supabase/config.toml`. Anonymous users take the same `authenticated` Postgres role as permanent users, so all existing owner-only policies apply to them unchanged; no policy was added or relaxed.
+- `070_demo_ledger_seed.test.sql` adds 26 assertions covering invoker authority, the permanent-account and unauthenticated refusals, relative dating, the untouched current day, cross-session isolation, and the repeat-seed no-op.
+- Fresh local reset and pgTAP now pass 7 files / 240 assertions. Local error-level lint reports no schema errors.
+
 ### Wave 6 update — 2026-09-01
 
 - PR #12 merged as `09f4fae`. All six tracked migrations are applied to the hosted project, including `20260901004116_reminder_delivery_rpc.sql`.

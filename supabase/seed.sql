@@ -1,16 +1,30 @@
--- Deterministic, fictional, local-only Wave 4 demo ledger.
+-- Local-only fictional demo ledger.
+--
+-- The persona and its calendar live in exactly one place: public.seed_demo_ledger().
+-- Restating them here would create a second copy that drifts from the demo a
+-- judge actually sees, and it would reintroduce the fixed calendar dates this
+-- seed used to carry. Instead this drives the same RPC, as the same owner role,
+-- through the same draft -> committed path, so a local reset produces the
+-- current week every time it runs.
+--
+-- The identity is genuinely anonymous, matching the demo sessions in production.
+-- It has no email and no password, so it cannot be signed into; browse it in
+-- Studio, or use the judge demo entry point in the running application.
+
 begin;
 
-insert into auth.users (id, email) values ('00000000-0000-4000-a000-000000000001', 'fictional-weekly-demo@gyst.test');
-insert into public.profiles (id, user_id, display_name, timezone) values ('00000000-0000-4000-a000-000000000002', '00000000-0000-4000-a000-000000000001', 'Fictional Weekly Demo', 'America/Chicago');
-insert into public.areas (id, user_id, title, sort_order) values ('00000000-0000-4000-a000-000000000010', '00000000-0000-4000-a000-000000000001', 'Fictional product studio', 1);
-insert into public.goals (id, user_id, area_id, title, priority) values ('00000000-0000-4000-a000-000000000021', '00000000-0000-4000-a000-000000000001', '00000000-0000-4000-a000-000000000010', 'Publish the imaginary field guide', 1), ('00000000-0000-4000-a000-000000000022', '00000000-0000-4000-a000-000000000001', '00000000-0000-4000-a000-000000000010', 'Polish fictional archive labels', 4);
-insert into public.key_dates (id, user_id, goal_id, title, due_on) values ('00000000-0000-4000-a000-000000000041', '00000000-0000-4000-a000-000000000001', '00000000-0000-4000-a000-000000000021', 'Imaginary field-guide review', '2026-09-18');
-insert into public.commitments (id, user_id, goal_id, title) values ('00000000-0000-4000-a000-000000000031', '00000000-0000-4000-a000-000000000001', '00000000-0000-4000-a000-000000000021', 'Write the fictional accessibility chapter'), ('00000000-0000-4000-a000-000000000032', '00000000-0000-4000-a000-000000000001', '00000000-0000-4000-a000-000000000021', 'Attend the imaginary holiday check-in'), ('00000000-0000-4000-a000-000000000035', '00000000-0000-4000-a000-000000000001', '00000000-0000-4000-a000-000000000022', 'Relabel fictional archive boxes'), ('00000000-0000-4000-a000-000000000036', '00000000-0000-4000-a000-000000000001', '00000000-0000-4000-a000-000000000021', 'Draft the next imaginary field-guide section');
-insert into public.ritual_sessions (id, user_id, kind, period_start) values ('00000000-0000-4000-a000-000000000101', '00000000-0000-4000-a000-000000000001', 'daily', '2026-08-31'), ('00000000-0000-4000-a000-000000000102', '00000000-0000-4000-a000-000000000001', 'daily', '2026-09-01'), ('00000000-0000-4000-a000-000000000103', '00000000-0000-4000-a000-000000000001', 'daily', '2026-09-02'), ('00000000-0000-4000-a000-000000000104', '00000000-0000-4000-a000-000000000001', 'daily', '2026-09-03');
-insert into public.daily_entries (user_id, ritual_session_id, moved_text, blocker_text, blocker_type, previous_commitment_id, previous_commitment_outcome, next_commitment_id, buried_win) values ('00000000-0000-4000-a000-000000000001', '00000000-0000-4000-a000-000000000101', 'Outlined the imaginary chapter.', 'Waiting for a fictional review board.', 'external_gate', '00000000-0000-4000-a000-000000000031', 'partial', '00000000-0000-4000-a000-000000000036', 'The cardboard prototype survived the rain; keep that exact phrase.'), ('00000000-0000-4000-a000-000000000001', '00000000-0000-4000-a000-000000000102', 'Protected the planned holiday block.', 'Waiting for a fictional review board.', 'external_gate', '00000000-0000-4000-a000-000000000032', 'planned_skip', '00000000-0000-4000-a000-000000000036', null), ('00000000-0000-4000-a000-000000000001', '00000000-0000-4000-a000-000000000103', 'Reworked the imaginary outline.', 'Waiting for a fictional review board.', 'external_gate', '00000000-0000-4000-a000-000000000031', 'deferred', '00000000-0000-4000-a000-000000000036', null), ('00000000-0000-4000-a000-000000000001', '00000000-0000-4000-a000-000000000104', 'Relabeled a fictional archive.', 'Waiting for a fictional review board.', 'external_gate', '00000000-0000-4000-a000-000000000035', 'done', '00000000-0000-4000-a000-000000000036', null);
-update public.ritual_sessions set status = 'committed', version = version + 1 where user_id = '00000000-0000-4000-a000-000000000001' and kind = 'daily';
-insert into public.ritual_sessions (id, user_id, kind, period_start) values ('00000000-0000-4000-a000-000000000201', '00000000-0000-4000-a000-000000000001', 'weekly', '2026-08-31');
-insert into public.weekly_entries (user_id, ritual_session_id, missing_metrics, observations, decision_text, arrow, priorities) values ('00000000-0000-4000-a000-000000000001', '00000000-0000-4000-a000-000000000201', '["Imaginary review cycle time"]', '["External gates were visible, not avoidant stalls."]', 'Protect the imaginary field-guide review window.', 'up', '[{"title":"Publish fictional review packet","due_on":"2026-09-07"}]');
-update public.ritual_sessions set status = 'committed', version = version + 1 where id = '00000000-0000-4000-a000-000000000201';
+insert into auth.users (id, email, is_anonymous)
+values ('00000000-0000-4000-a000-000000000001', null, true);
+
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-4000-a000-000000000001","role":"authenticated","is_anonymous":true}',
+  true
+);
+
+select public.seed_demo_ledger();
+
+reset role;
+
 commit;
