@@ -1,6 +1,6 @@
 begin;
 
-select plan(33);
+select plan(37);
 
 insert into auth.users (id, email) values
   ('77777777-7777-4777-8777-777777777777', 'reminder-owner@example.test'),
@@ -76,6 +76,13 @@ insert into public.commitment_events (user_id, commitment_id, kind, outcome, tit
   ('77777777-7777-4777-8777-777777777777', 'c7000000-0000-4000-8000-000000000003', 'planned_skip', 'planned_skip', 'Fictional claimed skip commitment', '2026-03-08');
 select ok(not public.reminder_claim_is_active((select id from public.notification_events where reminder_rule_id = 'b7000000-0000-4000-8000-000000000007')), 'a skip recorded after claim stops the pre-send active check');
 select is((select status::text from public.notification_events where reminder_rule_id = 'b7000000-0000-4000-8000-000000000007'), 'cancelled', 'a claimed occurrence suppressed before send is durably cancelled');
+
+insert into public.reminder_rules (id, user_id, ritual_kind, cadence, local_time, timezone, next_run_at, enabled) values
+  ('b7000000-0000-4000-8000-000000000008', '77777777-7777-4777-8777-777777777777', 'daily', 'daily', '09:00', 'America/Chicago', '2026-03-08 14:00+00', true);
+select is((select count(*) from public.claim_due_reminder_notifications('2026-03-08 14:15+00', 25, 900)), 1::bigint, 'a due event can be claimed before an owner opts out');
+select lives_ok($$update public.reminder_rules set enabled = false where id = 'b7000000-0000-4000-8000-000000000008'$$, 'the owner can opt out after a claim');
+select is((select count(*) from public.claim_due_reminder_notifications('2026-03-08 14:30+00', 25, 900)), 0::bigint, 'a later scheduler cancels an opted-out claimed event instead of retrying it');
+select is((select status::text from public.notification_events where reminder_rule_id = 'b7000000-0000-4000-8000-000000000008'), 'cancelled', 'an opted-out claimed event is not stranded');
 
 select * from finish();
 rollback;

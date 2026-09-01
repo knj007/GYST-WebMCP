@@ -63,7 +63,7 @@ export async function deliverDueReminders(env: unknown, now = new Date()): Promi
   for (const reminder of claimed) {
     try {
       const active = await postRpc(env, "reminder_claim_is_active", { p_notification_event_id: reminder.notification_event_id });
-      if (active !== true) return;
+      if (active !== true) continue;
       const providerMessageId = await sendReminderEmail(env, reminder);
       await postRpc(env, "record_reminder_delivery", { p_notification_event_id: reminder.notification_event_id, p_provider_message_id: providerMessageId });
     } catch (error) {

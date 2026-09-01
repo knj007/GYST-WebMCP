@@ -38,18 +38,22 @@ describe("deliverDueReminders", () => {
     expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 
-  it("does not send when an opt-out cancels the claim", async () => {
+  it("skips an inactive claim without stranding later claimed reminders", async () => {
+    const secondReminder = { ...reminder, notification_event_id: "33333333-3333-4333-8333-333333333333", reminder_rule_id: "44444444-4444-4444-8444-444444444444" };
+    let activeCalls = 0;
     const fetchMock = vi.fn(async (input: string | URL) => {
       const url = String(input);
-      if (url.endsWith("claim_due_reminder_notifications")) return Response.json([reminder]);
-      if (url.endsWith("reminder_claim_is_active")) return Response.json(false);
+      if (url.endsWith("claim_due_reminder_notifications")) return Response.json([reminder, secondReminder]);
+      if (url.endsWith("reminder_claim_is_active")) return Response.json(++activeCalls > 1);
+      if (url === "https://api.resend.com/emails") return Response.json({ id: "provider-message-2" });
+      if (url.endsWith("record_reminder_delivery")) return Response.json(true);
       throw new Error(`unexpected request ${url}`);
     });
     vi.stubGlobal("fetch", fetchMock);
 
     await deliverDueReminders(env);
 
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(5);
   });
 
   it("records a retriable ledger failure when Resend rejects the delivery", async () => {

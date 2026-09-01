@@ -97,14 +97,18 @@ begin
     from public.reminder_rules as rule
    where event.user_id = rule.user_id
      and event.reminder_rule_id = rule.id
-     and event.status in ('pending'::public.notification_status, 'failed'::public.notification_status)
-     and exists (
-       select 1
-         from public.commitment_events as skip_event
-        where skip_event.user_id = rule.user_id
-          and skip_event.commitment_id = rule.commitment_id
-          and skip_event.outcome = 'planned_skip'::public.commitment_outcome
-          and skip_event.event_on = (event.scheduled_for at time zone rule.timezone)::date
+     and event.status in ('pending'::public.notification_status, 'claimed'::public.notification_status, 'failed'::public.notification_status)
+     and (
+       not rule.enabled
+       or rule.next_run_at is distinct from event.scheduled_for
+       or exists (
+         select 1
+           from public.commitment_events as skip_event
+          where skip_event.user_id = rule.user_id
+            and skip_event.commitment_id = rule.commitment_id
+            and skip_event.outcome = 'planned_skip'::public.commitment_outcome
+            and skip_event.event_on = (event.scheduled_for at time zone rule.timezone)::date
+       )
      );
 
   return query
@@ -156,13 +160,17 @@ begin
      and event.user_id = rule.user_id
      and event.reminder_rule_id = rule.id
      and event.status = 'claimed'::public.notification_status
-     and exists (
-       select 1
-         from public.commitment_events as skip_event
-        where skip_event.user_id = rule.user_id
-          and skip_event.commitment_id = rule.commitment_id
-          and skip_event.outcome = 'planned_skip'::public.commitment_outcome
-          and skip_event.event_on = (event.scheduled_for at time zone rule.timezone)::date
+     and (
+       not rule.enabled
+       or rule.next_run_at is distinct from event.scheduled_for
+       or exists (
+         select 1
+           from public.commitment_events as skip_event
+          where skip_event.user_id = rule.user_id
+            and skip_event.commitment_id = rule.commitment_id
+            and skip_event.outcome = 'planned_skip'::public.commitment_outcome
+            and skip_event.event_on = (event.scheduled_for at time zone rule.timezone)::date
+       )
      );
 
   return exists (
