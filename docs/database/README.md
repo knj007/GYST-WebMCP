@@ -4,11 +4,12 @@ Last verified: 2026-09-01
 
 ## Current state
 
-### Wave 7 ownership and deletion update — 2026-09-01
+### Wave 7 ownership and deletion release — 2026-09-01
 
-- Local-only migration `20260901155949_add_account_deletion_rpc.sql` adds `public.delete_my_account()`. It is a zero-argument `SECURITY DEFINER` function with an empty search path, granted only to `authenticated`. It obtains its target solely from `auth.uid()`, refuses an `is_anonymous` JWT claim, and deletes the caller's Auth identity.
+- PR #19 merged as `2b3571d`; migration `20260901155949_add_account_deletion_rpc.sql` is applied to the hosted project, and remote migration history plus error-level lint are clean. Git-integrated production deployment is Ready.
+- The migration adds `public.delete_my_account()`: a zero-argument `SECURITY DEFINER` function with an empty search path, granted only to `authenticated`. It obtains its target solely from `auth.uid()`, refuses an `is_anonymous` JWT claim, and deletes the caller's Auth identity.
 - The RPC reuses the existing `auth.users` cascade marker and immutable-ledger guards. It does not grant a browser role direct Auth-table access or direct delete capability over ledger tables; committed-row cascade remains limited to a whole-account delete transaction.
-- `090_account_deletion_rpc.test.sql` proves authenticated-only execution, demo rejection, self-only deletion, owner-child cascade, and that another owner's rows remain. Full local pgTAP now passes 9 files / 270 assertions. This migration has not been applied to the hosted project.
+- `090_account_deletion_rpc.test.sql` proves authenticated-only execution, demo rejection, self-only deletion, owner-child cascade, and that another owner's rows remain. Local evidence passes 9 pgTAP files / 270 assertions; unit, browser, build, and local export-isolation checks passed before release. No production user was created or deleted to exercise the destructive flow.
 
 ### Wave 6.5 reminder-schedule update — 2026-09-01
 
