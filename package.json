@@ -17,7 +17,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "worker:dry-run": "wrangler deploy --dry-run --config workers/reminders/wrangler.jsonc"
+    "worker:dry-run": "wrangler deploy --dry-run --env production --config workers/reminders/wrangler.jsonc"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.5",
