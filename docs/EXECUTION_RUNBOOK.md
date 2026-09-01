@@ -54,14 +54,24 @@ Verified before this runbook was written:
 
 The earlier product plan remains the product specification. This runbook is the execution/control layer and does not replace the product decisions in that plan.
 
-### 2.1 Current execution checkpoint — 2026-08-30
+### 2.1 Current execution checkpoint — 2026-09-01
 
-#### Wave 4 update — 2026-08-31
+#### Wave 6 update — 2026-09-01
+
+- PR #12 merged as `09f4fae`; Vercel checks passed and Git integration released `main`.
+- Hosted Supabase has all six tracked migrations through `20260901004116_reminder_delivery_rpc.sql`. The reminder RPCs are service-role-only, `SECURITY INVOKER`, bounded, idempotent through `notification_events`, and preserve the rule/skip/opt-out ledger boundary.
+- Turnstile signup is live: the browser has only the site key, Siteverify runs server-side before Supabase Auth signup, and focused failure/success tests pass.
+- Cloudflare Worker `gyst-reminders` is deployed with `*/15 * * * *` UTC Cron Trigger and a public health endpoint only. It is stateless and has no D1, KV, R2, or direct ledger-table contract.
+- Resend is connected to Production; its verified sending domain is configured. The approved one-message test was accepted and reported delivered. The current deliverability follow-up is Gmail placement/DMARC, not provider delivery.
+- Legacy Supabase JWT `anon` and `service_role` keys are disabled. Provider configuration holds browser-safe publishable values and server-only secrets; no values belong in this runbook.
+- Wave 6 verification passed 6 pgTAP files / 214 assertions, 14 Vitest files / 49 tests, app and Worker type checks, lint, production build, Worker dry-run, Supabase lint, and Supabase advisors.
+
+#### Historical Wave 4–5 checkpoint — 2026-08-31
 
 - PR #6 merged as `076f1a5`. The local Wave 3 daily flow and Wave 4 weekly context/draft/commit flow are now on `main`; Vercel PR checks passed before merge.
 - Remote Supabase now has five tracked migrations through `20260831135035_weekly_context_patterns_and_commit.sql`. Remote migration history and error-level lint pass; advisors report no security/error finding and only informational unused-index notices on the empty ledger.
 - Local Wave 4 verification passes: fresh seeded reset, 5 pgTAP files / 177 assertions, local lint/advisors, typecheck, lint, build, 7 Vitest files / 20 tests, and 3 Playwright tests. The local seed remains deterministic and fictional.
-- Wave 5 is verified on the `codex/wave5-webmcp` Vercel preview with a single isolated fictional Auth user and fictional ledger. WebMCP tool registration is complete; Turnstile, reminders, exports/deletion, merge/release, and submission evidence remain unfinished. Do not represent the application as submission-ready.
+- Wave 5 is verified on the `codex/wave5-webmcp` Vercel preview with a single isolated fictional Auth user and fictional ledger. WebMCP tool registration is complete. The statements below about pre-Wave-6 provider status are historical only; the project is still not submission-ready.
 
 - Before PR #4, GitHub `main` resolved to `c576e08d7a3151dc8cff7939ae56f347633f4263`, a documentation-only merge. The deployed application's A5/A9 activation baseline is `04851f557d24d4c43d65106ba5f4beb302613191`. The earlier `369733b0f6eb50c1d9cf606b09b2e0a1c0b5b8ad` database/application baseline and the foundation deployment at `b6ba3ea` are historical evidence only.
 - The repository contains a strict TypeScript Next.js 16.3.3 App Router application with Tailwind, ESLint, Vitest, Playwright, a committed npm lockfile, and Node 24.x runtime metadata.
@@ -72,9 +82,9 @@ The earlier product plan remains the product specification. This runbook is the 
 - Local and production error-level database lint pass. The Wave 3 local advisors report no security or error-level finding; three informational unused-index notices remain. Production security advisors have no findings, while the new empty production schema reports 18 informational unused-index notices and no security/error finding.
 - Under explicit A5 approval, Vercel Production now contains `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` only; no privileged Supabase key was added. Under explicit A9 approval, Vercel rebuilt the existing Git-integrated production artifact after that configuration change. The deployment is Ready, `/` returns 200, and unauthenticated `/daily` redirects to `/login` (not `?reason=configuration`). No real user, production application data, or Supabase configuration was changed.
 - The Vercel CLI session was signed out and reauthenticated after credential-hygiene remediation. No credential value belongs in repository documentation or command output.
-- The Cloudflare Worker skeleton is configured for staging and production names and has passed dry runs. No Worker, Cron Trigger, or Turnstile widget has been created remotely.
+- Historical pre-Wave-6 statement: the Worker skeleton was configured for staging and production names and passed dry runs. It has since been deployed as recorded above.
 - Vercel's Git integration deploys `main`, but repository CI workflows have not been added yet.
-- Resend and production email are not configured. No real email or real-user creation has been authorized.
+- Historical pre-Wave-6 statement: Resend and production email were not configured. They are now configured under the separately recorded approvals above.
 - Completed external scopes: remediation migration, `main` push, baseline production deployment, A2 application of only `20260830194920_wave2_application_schema.sql`, A5 configuration of only the two browser-safe Vercel Supabase values, and A9 rebuild of the existing production artifact. These approvals are narrow and complete; later migrations, configuration, secrets, resources, pushes, and deployments still require their applicable one-time gates.
 
 Focused current-state guides:
@@ -614,6 +624,8 @@ Evidence gate W6 / approvals A4-A6:
 - Turnstile negative/positive tests pass.
 - Secret scans show no secret values in source, bundles, logs, or exports.
 - Owner approves resource creation, secret placement, and the first real test email separately.
+
+Wave 6 release status: complete. See `docs/deployment/production-wave6-evidence-2026-09-01.md` for the sanitized provider and verification record. The next operational proof is a naturally due reminder; do not create ledger history merely to force one without a new owner approval.
 
 ### Wave 7 — Ownership, exports, and deletion
 

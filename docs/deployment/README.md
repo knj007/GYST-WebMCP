@@ -1,12 +1,12 @@
 # Deployment and Provider Guide
 
-Last verified: 2026-08-31
+Last verified: 2026-09-01
 
 ## Vercel production
 
-### Wave 4 release update
+### Wave 6 release update
 
-PR #6 merged as `076f1a5` after its Vercel checks passed. Git integration is responsible for the corresponding production build; this guide does not treat that build as proof of an authenticated ritual flow because production has no authorized demo identity or fictional ledger data. The Wave 4 Supabase migration is applied remotely; the local fictional seed is intentionally not.
+PR #12 merged as `09f4fae` after Vercel checks passed. Vercel Git integration deploys `main`; the current production URL is `https://gyst-web-mcp.vercel.app`.
 
 | Setting | Current value |
 | --- | --- |
@@ -20,27 +20,17 @@ PR #6 merged as `076f1a5` after its Vercel checks passed. Git integration is res
 | Output directory | Next.js default |
 | Node.js | 24.x |
 | Production URL | `https://gyst-web-mcp.vercel.app` |
-| GitHub `main` before PR #4 | `c576e08d7a3151dc8cff7939ae56f347633f4263` (documentation-only PR #3 merge) |
-| Application activation baseline | `04851f557d24d4c43d65106ba5f4beb302613191` (A5/A9) |
-| Historical foundation deployment | `dpl_6mmxpMFXaSvFoH1xxHJf2zTzPUgJ` at `b6ba3ea27f862b2347b0eaaeb3af0ef1cbd7eb4c` |
-
-The first Git-triggered build compiled successfully but failed packaging because the project used the `Other` framework preset and resolved its output directory to `public`. The project was corrected to the Next.js preset with automatic output detection, and the exact reviewed commit was redeployed successfully.
+| Current application release | `09f4fae` (PR #12) |
+| Historical activation evidence | `docs/deployment/production-a5-a9-evidence-2026-08-30.md` |
 
 Current production state:
 
-- Vercel's Git integration produced a Ready production deployment after the `c576e08d7a3151dc8cff7939ae56f347633f4263` documentation-only merge. Its application behavior remains the A5/A9 activation baseline at `04851f557d24d4c43d65106ba5f4beb302613191`; after the approved configuration change, Vercel rebuilt that existing production artifact successfully.
-- `/` — healthy production homepage.
-- `/daily` — unauthenticated request redirects to `/login`.
-- Under the completed A5 gate, Production contains only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for this Supabase activation. They are browser-safe values; neither a service-role nor another privileged Supabase key was configured. The values themselves are not recorded here.
-- Production Supabase now contains the two tracked migrations and 11 RLS-enabled, empty application tables. This changes the database foundation only; it does not make the ritual flows usable.
-
-The deployed routes are an authenticated application shell, not proof that the daily/weekly ritual, human-only commit, WebMCP, reminder, or demo flows are complete.
-
-The daily draft form, atomic draft-save RPC, and validated commit RPC are current local Wave 3 work only. The owner selected the application/WebMCP capability boundary—WebMCP has no commit tool—rather than a false database claim about human origin. Local W3 evidence now includes the ordinary-form authenticated E2E flow, focused Server Action error/retry coverage, a negative no-WebMCP-commit source contract, and approved focused application/database reviews. This local work has not been merged, deployed, or paired with an A8 production migration approval; production remains the authenticated shell and empty Wave 2 ledger described above.
-
-The sanitized configuration and deployment evidence is in [production-a5-a9-evidence-2026-08-30.md](production-a5-a9-evidence-2026-08-30.md). A5 and A9 are complete only for the listed configuration and rebuild; future production configuration or deployments remain gated.
-
-Vercel's Git integration is connected to `main`. The repository does not yet contain GitHub Actions or another independent CI workflow, so the current production evidence relies on local verification plus Vercel's build and status checks.
+- `/` is healthy; unauthenticated protected routes redirect to `/login`.
+- Public signup is protected by Turnstile. Vercel Production holds `TURNSTILE_SECRET_KEY` as a server-only secret and the browser-safe Turnstile site key as configuration. Values are not documented.
+- Vercel Production holds browser-safe Supabase URL and publishable-key configuration. The app never receives a Supabase secret key.
+- The Resend Marketplace integration supplies `RESEND_API_KEY` to Vercel Production for provider management. The deployed reminder Worker receives its own encrypted Cloudflare secret; no key value is stored in this repository.
+- Daily/weekly ordinary flows and fourteen draft/read-only WebMCP tools are merged and deployed. WebMCP still cannot commit or delete ledger records.
+- Current release evidence is [production-wave6-evidence-2026-09-01.md](production-wave6-evidence-2026-09-01.md). The dated A5/A9 record remains historical evidence for its narrower 2026-08-30 activation scope.
 
 ## Read-only verification
 
@@ -58,13 +48,12 @@ Never read, print, copy into commands, or commit the Vercel authentication store
 
 ## Cloudflare and email state
 
-- Worker source and `wrangler.jsonc` exist under `workers/reminders/`.
-- Staging name: `gyst-reminders-staging`.
-- Production name: `gyst-reminders`.
-- The Worker currently exposes only `/health`; its scheduled handler is intentionally empty.
-- Staging and production Wrangler dry runs pass.
-- No Worker deployment, Cron Trigger, Turnstile widget, or Wrangler secret has been created remotely.
-- Resend, sender identity, and real email delivery are not configured.
+- Turnstile widget `gyst-signup` is active for the production application.
+- Worker `gyst-reminders` is deployed. Its public health endpoint is `https://gyst-reminders.gyst.workers.dev/health`; the worker has one UTC schedule, `*/15 * * * *`.
+- The Worker invokes a typed scheduled handler and only the narrow Supabase reminder-delivery RPCs. It has no D1, KV, R2, direct ledger-table contract, or public send endpoint.
+- Cloudflare holds encrypted Worker secrets by name only: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, and `REMINDER_FROM_EMAIL`.
+- Resend is configured on the free plan, connected to Vercel Production, and the `geekindad.com` sending domain is verified. The one approved delivery test was accepted and reported delivered.
+- SPF and DKIM are configured. A separate monitor-only DMARC decision remains pending; do not add or modify DNS records without explicit approval.
 
 Validate the Worker without deploying:
 
@@ -75,6 +64,6 @@ npm run worker:dry-run
 
 ## Release and rollback boundary
 
-A production release packet must identify the exact commit, complete verification results, known issues, provider changes, and rollback target before approval. Git pushes, deployments, domains, secrets, remote provider configuration, Worker/Cron/Turnstile resources, and real email remain gated external writes.
+A production release packet must identify the exact commit, complete verification results, known issues, provider changes, and rollback target before approval. Future Git pushes, deployments, domains, secrets, remote provider configuration, Worker/Cron/Turnstile resources, and real email remain gated external writes.
 
 The historical foundation deployment remains a rollback reference for application code. Database rollback is not allowed: use forward-only corrective migrations, and never repair production by weakening RLS.

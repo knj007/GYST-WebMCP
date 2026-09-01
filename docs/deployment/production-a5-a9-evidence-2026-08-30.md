@@ -2,6 +2,8 @@
 
 Date: 2026-08-30
 
+> Historical evidence only. This preserves the narrow A5/A9 activation record; current Wave 6 state is documented in [production-wave6-evidence-2026-09-01.md](production-wave6-evidence-2026-09-01.md).
+
 Targets: Vercel team `knj007`, project `gyst-web-mcp`, Production environment; Supabase project `ztxuxbjimssuxkazawxr`
 
 Approved scope: A5 configuration of the two browser-safe Supabase values and A9 redeploy of the existing Git-integrated production artifact. No other remote mutation was in scope.

@@ -2,6 +2,8 @@
 
 Date: 2026-08-30
 
+> Historical evidence only. This preserves the approved Wave 2 migration record; current hosted state is documented in [the database guide](README.md) and includes later migrations.
+
 Project: `ztxuxbjimssuxkazawxr`
 Approved scope: only `20260830194920_wave2_application_schema.sql`
 
