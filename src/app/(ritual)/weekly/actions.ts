@@ -37,7 +37,6 @@ async function persistWeeklyDraft(formData: FormData) {
 export async function saveWeeklyDraft(_state: WeeklyActionState, formData: FormData): Promise<WeeklyActionState> {
   try {
     await persistWeeklyDraft(formData);
-    revalidatePath("/weekly");
     return { message: "Weekly draft saved. Only you can commit the final record.", status: "success" };
   } catch (error) {
     return { message: error instanceof Error ? error.message : "Unable to save the weekly draft.", status: "error" };

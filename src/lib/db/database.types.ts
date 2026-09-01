@@ -477,6 +477,7 @@ export type Database = {
           created_at: string
           enabled: boolean
           id: string
+          is_ritual_schedule: boolean
           local_time: string
           next_run_at: string | null
           ritual_kind: Database["public"]["Enums"]["ritual_kind"] | null
@@ -493,6 +494,7 @@ export type Database = {
           created_at?: string
           enabled?: boolean
           id?: string
+          is_ritual_schedule?: boolean
           local_time: string
           next_run_at?: string | null
           ritual_kind?: Database["public"]["Enums"]["ritual_kind"] | null
@@ -509,6 +511,7 @@ export type Database = {
           created_at?: string
           enabled?: boolean
           id?: string
+          is_ritual_schedule?: boolean
           local_time?: string
           next_run_at?: string | null
           ritual_kind?: Database["public"]["Enums"]["ritual_kind"] | null
@@ -697,6 +700,23 @@ export type Database = {
           ritual_session_id: string
           status: Database["public"]["Enums"]["ritual_status"]
           version: number
+        }[]
+      }
+      save_ritual_reminder_schedule: {
+        Args: {
+          p_enabled: boolean
+          p_local_time: string
+          p_ritual_kind: Database["public"]["Enums"]["ritual_kind"]
+          p_weekday?: number | null
+        }
+        Returns: {
+          cadence: Database["public"]["Enums"]["reminder_cadence"]
+          enabled: boolean
+          local_time: string
+          next_run_at: string | null
+          ritual_kind: Database["public"]["Enums"]["ritual_kind"]
+          timezone: string
+          weekday: number | null
         }[]
       }
       seed_demo_ledger: { Args: never; Returns: Json }

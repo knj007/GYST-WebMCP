@@ -73,7 +73,6 @@ export async function saveDailyDraft(
 ): Promise<DailyActionState> {
   try {
     await persistDailyDraft(formData);
-    revalidatePath("/daily");
     return { message: "Draft saved. Only you can commit the final record.", status: "success" };
   } catch (error) {
     return {

@@ -92,6 +92,15 @@ describe("daily ritual server actions", () => {
     });
   });
 
+  test("keeps a successful save response in the client action state", async () => {
+    mocks.rpc.mockReturnValueOnce({ single: vi.fn().mockResolvedValue(successfulDraft()) });
+
+    await expect(saveDailyDraft(initialDailyActionState, dailyForm())).resolves.toEqual({
+      message: "Draft saved. Only you can commit the final record.", status: "success",
+    });
+    expect(mocks.revalidatePath).not.toHaveBeenCalled();
+  });
+
   test("shows stale-draft guidance when the commit RPC rejects its version", async () => {
     mocks.rpc
       .mockReturnValueOnce({ single: vi.fn().mockResolvedValue(successfulDraft()) })

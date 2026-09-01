@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Route } from "next";
 
 import { signOut } from "@/lib/auth/actions";
 
@@ -15,6 +16,9 @@ export function AuthenticatedHeader({ displayName }: { displayName: string }) {
           </Link>
           <Link className="transition-colors hover:text-foreground" href="/weekly">
             Weekly
+          </Link>
+          <Link className="transition-colors hover:text-foreground" href={"/settings/schedule" as Route}>
+            Schedule
           </Link>
           <span className="hidden text-foreground sm:inline">{displayName}</span>
           <form action={signOut}>

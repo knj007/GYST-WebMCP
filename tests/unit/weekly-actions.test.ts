@@ -21,6 +21,11 @@ describe("weekly ritual server actions", () => {
     mocks.rpc.mockReturnValueOnce({ single: vi.fn().mockResolvedValue({ data: null, error: { code: "40001" } }) });
     await expect(saveWeeklyDraft(initial, form())).resolves.toEqual({ message: "The weekly draft changed elsewhere. Refresh before saving.", status: "error" });
   });
+  test("keeps a successful save response in the client action state", async () => {
+    mocks.rpc.mockReturnValueOnce({ single: vi.fn().mockResolvedValue(saved) });
+    await expect(saveWeeklyDraft(initial, form())).resolves.toEqual({ message: "Weekly draft saved. Only you can commit the final record.", status: "success" });
+    expect(mocks.revalidatePath).not.toHaveBeenCalled();
+  });
   test("commits only through the separate weekly commit RPC", async () => {
     mocks.rpc.mockReturnValueOnce({ single: vi.fn().mockResolvedValue(saved) }).mockResolvedValueOnce({ data: null, error: null });
     await expect(commitWeeklyRitual(initial, form({ session_version: "1", decision_text: "Focus", arrow: "up", priorities: "Priority | 2026-09-07" }))).resolves.toEqual({ message: "Weekly ritual committed. The record is now immutable.", status: "success" });
