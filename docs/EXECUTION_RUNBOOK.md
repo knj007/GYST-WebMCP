@@ -56,6 +56,12 @@ The earlier product plan remains the product specification. This runbook is the 
 
 ### 2.1 Current execution checkpoint — 2026-09-01
 
+#### Wave 6.5 update — 2026-09-01
+
+- Owners can set, pause, and resume one daily and one weekly ritual reminder from `/settings/schedule`. The schedule uses the profile timezone and calculates a future local-time run; a first schedule save safely initializes a missing profile from the browser timezone.
+- Migration `20260901135156_ritual_reminder_schedule.sql` is forward-only and applied to the hosted project before the application release. It adds no browser service-role capability: its `SECURITY INVOKER` RPC is granted only to `authenticated`, while the stateless Worker remains the only delivery actor.
+- Local verification passes 8 pgTAP files / 258 assertions, 17 Vitest files / 83 tests, app and Worker type checks, lint, production build, Worker dry-run, Supabase lint, and all 5 Playwright specs. The previous draft-save confirmation defect is resolved.
+
 #### Judge demo update — 2026-09-01
 
 - A visitor can reach a populated fictional ledger in one click, with no account and no shared credential. "Open the demo" performs a Turnstile-protected Supabase anonymous sign-in, then calls `public.seed_demo_ledger()`.

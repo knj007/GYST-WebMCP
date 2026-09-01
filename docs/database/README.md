@@ -4,6 +4,12 @@ Last verified: 2026-09-01
 
 ## Current state
 
+### Wave 6.5 reminder-schedule update — 2026-09-01
+
+- `20260901135156_ritual_reminder_schedule.sql` is applied to the hosted project. It adds a narrow, owner-invoker `save_ritual_reminder_schedule()` RPC and an `is_ritual_schedule` marker so user-configured ritual schedules cannot collide with existing commitment or session reminder rules.
+- Each owner may maintain one daily and one weekly ritual schedule. The RPC derives cadence from ritual kind, reads the stored profile timezone, calculates a future local-wall-time occurrence, and allows a paused schedule to retain its preferred time without a due run.
+- The RPC is executable only by `authenticated`; `anon` has no execute privilege. New pgTAP coverage proves invoker authority, owner isolation, pause/resume behavior, weekly weekday validation, and future-run calculation. Fresh local reset now passes 8 files / 258 assertions; hosted migration history and error-level lint pass.
+
 ### Judge demo update — 2026-09-01
 
 - `20260901035852_demo_ledger_seed.sql` is applied to the hosted project and adds `public.seed_demo_ledger()`, the fictional ledger used by the one-click judge demo. All seven tracked migrations match the hosted history and remote error-level lint reports no schema errors.
