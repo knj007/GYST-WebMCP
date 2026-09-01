@@ -6,7 +6,7 @@ Last verified: 2026-09-01
 
 ### Judge demo update — 2026-09-01
 
-- `20260901035852_demo_ledger_seed.sql` adds `public.seed_demo_ledger()`, the fictional ledger used by the one-click judge demo.
+- `20260901035852_demo_ledger_seed.sql` is applied to the hosted project and adds `public.seed_demo_ledger()`, the fictional ledger used by the one-click judge demo. All seven tracked migrations match the hosted history and remote error-level lint reports no schema errors.
 - The RPC is `SECURITY INVOKER` and holds no elevated authority. It writes nothing the calling owner could not write through the ordinary application path, so the existing owner-only policies are what prove a demo session can only seed itself.
 - It refuses a permanent account outright: seeding requires the `is_anonymous` JWT claim, so fiction can never be written into a real ledger.
 - It refuses to overwrite an existing ledger. A demo session that wants a clean slate takes a new anonymous identity; committed records stay immutable, which is the same guarantee the product makes to every owner.
@@ -21,7 +21,7 @@ Last verified: 2026-09-01
 
 ### Wave 6 update — 2026-09-01
 
-- PR #12 merged as `09f4fae`. All six tracked migrations are applied to the hosted project, including `20260901004116_reminder_delivery_rpc.sql`.
+- Historical Wave 6 statement, superseded above: PR #12 merged as `09f4fae`, and six tracked migrations were applied to the hosted project, including `20260901004116_reminder_delivery_rpc.sql`.
 - The reminder migration adds a stateless service-role-only delivery contract: a bounded due-batch claim, pre-send active check, success/failure reconciliation, stale-claim recovery, planned-skip/opt-out cancellation, and recurrence calculation that preserves local wall time through daylight-saving transitions.
 - `notification_events` remain the durable idempotency ledger. The unique `(reminder_rule_id, scheduled_for)` event is the duplicate guard; Resend receives the event ID as its idempotency key.
 - No authenticated browser role can execute the reminder delivery RPCs. They are `SECURITY INVOKER`, granted only to `service_role`; the Worker has no direct table-write contract.
@@ -90,7 +90,7 @@ dates, due reminder claims, and notification claims. Those future worker/query
 paths are retained; representative application traffic does not exist yet.
 
 supabase migration list --local
-Result: historical PASS; production now has all six tracked migrations through `20260901004116`.
+Result: historical PASS; production now has all seven tracked migrations through `20260901035852`.
 
 supabase gen types typescript --local --schema public
 Result: PASS; the generated local `commit_daily_ritual` RPC signature matches the checked-in `src/lib/db/database.types.ts` update.

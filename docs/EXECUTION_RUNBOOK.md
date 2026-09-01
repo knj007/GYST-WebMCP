@@ -2,7 +2,7 @@
 
 Status: execution in progress; Wave 2 production foundation and browser-safe application activation verified
 Prepared: 2026-08-29
-Last verified: 2026-08-31
+Last verified: 2026-09-01
 Submission target: 2026-09-03 at 1:00 p.m. Pacific / 3:00 p.m. Central
 Repository: `knj007/GYST-WebMCP`
 Supabase project: `knj007's Project` (`ztxuxbjimssuxkazawxr`, `us-east-2`)
@@ -66,13 +66,15 @@ The earlier product plan remains the product specification. This runbook is the 
 - `supabase/seed.sql` now drives the same RPC instead of restating the persona with fixed dates.
 - Local verification: 7 pgTAP files / 240 assertions, 16 Vitest files / 75 tests, app and Worker type checks, lint, production build, Worker dry-run, and Supabase lint.
 - Known defect, pre-existing on `main` and unrelated to this work: saving a daily or weekly draft persists correctly but renders no confirmation message. Two Playwright specs fail on it; the remaining three pass.
-- Outstanding gate: hosted Supabase Auth must enable anonymous sign-ins and Turnstile captcha. Neither can be applied by migration, and both must land with or before the deploy.
+- The hosted Supabase Auth gate is satisfied. Anonymous sign-ins and CAPTCHA protection are enabled, captcha enforcement was confirmed against the running project before the merge, and the owner completed the demo entry in a browser afterwards. Never disable captcha while anonymous sign-ins are on: that combination fails open on both signup and anonymous sign-in, and nothing in the application, tests, or CI can observe it.
+- PR #15 merged as `7c4009b`. Migration `20260901035852_demo_ledger_seed.sql` was applied before the merge so the function existed before any deployed code could call it. All seven tracked migrations match the hosted history and remote error-level lint passes.
+- Sanitized release evidence: `docs/deployment/production-judge-demo-evidence-2026-09-01.md`.
 
 #### Wave 6 update — 2026-09-01
 
 - PR #12 merged as `09f4fae`; Vercel checks passed and Git integration released `main`.
-- Hosted Supabase has all six tracked migrations through `20260901004116_reminder_delivery_rpc.sql`. The reminder RPCs are service-role-only, `SECURITY INVOKER`, bounded, idempotent through `notification_events`, and preserve the rule/skip/opt-out ledger boundary.
-- Turnstile signup is live: the browser has only the site key, Siteverify runs server-side before Supabase Auth signup, and focused failure/success tests pass.
+- Historical Wave 6 statement, superseded above: hosted Supabase had six tracked migrations through `20260901004116_reminder_delivery_rpc.sql`. The reminder RPCs are service-role-only, `SECURITY INVOKER`, bounded, idempotent through `notification_events`, and preserve the rule/skip/opt-out ledger boundary.
+- Historical Wave 6 statement, superseded by the judge demo release: Turnstile signup was live with application-side Siteverify running before Supabase Auth signup. Verification has since moved into Supabase Auth so that it also covers the directly reachable anonymous sign-in endpoint.
 - Cloudflare Worker `gyst-reminders` is deployed with `*/15 * * * *` UTC Cron Trigger and a public health endpoint only. It is stateless and has no D1, KV, R2, or direct ledger-table contract.
 - Resend is connected to Production; its verified sending domain is configured. The approved one-message test was accepted and reported delivered. The current deliverability follow-up is Gmail placement/DMARC, not provider delivery.
 - Legacy Supabase JWT `anon` and `service_role` keys are disabled. Provider configuration holds browser-safe publishable values and server-only secrets; no values belong in this runbook.
@@ -732,8 +734,8 @@ The project is complete only when every row below has direct evidence.
 
 | Requirement | Authoritative evidence |
 | --- | --- |
-| Judge can sign in; new user can sign up through Turnstile | Production E2E/video plus server logs showing verified flow without secret exposure. |
-| Weekly page loads fictional committed week | Seed migration/fixture and production screenshot/E2E assertion. |
+| Judge can reach the product; new user can sign up through Turnstile | Judge access is satisfied: the demo entry point needs no credential and was completed in production on 2026-09-01, recorded in `docs/deployment/production-judge-demo-evidence-2026-09-01.md`. Ordinary Turnstile signup still needs its own production evidence without secret exposure. |
+| Weekly page loads fictional committed week | Satisfied for the demo path by `seed_demo_ledger()` and its pgTAP assertions, confirmed in production. A screenshot or E2E assertion is still owed for the submission package. |
 | ChatGPT discovers weekly WebMCP tools | In-app browser recording and tool-list assertion. |
 | Required structured findings appear | Deterministic database/unit tests plus demo output. |
 | Agent asks for missing fact and updates visible draft | Browser E2E/recording and persisted draft row. |

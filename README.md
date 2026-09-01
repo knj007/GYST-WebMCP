@@ -7,10 +7,10 @@ GYST is a human-owned daily and weekly ritual ledger. The application can read b
 Last verified — 2026-09-01:
 
 - Production is [gyst-web-mcp.vercel.app](https://gyst-web-mcp.vercel.app). `main` includes Wave 6 through merge commit `09f4fae` (PR #12).
-- A judge or reviewer can open the product without an account. "Open the demo" signs the visitor in anonymously behind Turnstile and seeds a fictional ledger scoped to that throwaway identity: a full prior week of committed days, its detected patterns, and today left open to conduct. Every visitor gets a separate ledger, so one visitor's commit never changes what the next one sees, and no shared demo credential exists to distribute or maintain.
+- A judge or reviewer can open the product without an account, verified live in production on 2026-09-01. "Open the demo" signs the visitor in anonymously behind Turnstile and seeds a fictional ledger scoped to that throwaway identity: a full prior week of committed days, its detected patterns, and today left open to conduct. Every visitor gets a separate ledger, so one visitor's commit never changes what the next one sees, and no shared demo credential exists to distribute or maintain.
 - The demo's fictional data is generated relative to the current week at call time, so it never goes stale. `supabase/seed.sql` drives the same RPC rather than restating the persona.
-- Hosted Supabase has the six Wave 6 migrations through `20260901004116_reminder_delivery_rpc.sql`. `20260901035852_demo_ledger_seed.sql` is the seventh tracked migration and is pending its remote gate. The ledger remains the only durable application record; the Worker is stateless and may only claim/reconcile notification events through narrow service-role RPCs.
-- Public signup and the demo entry point both use Cloudflare Turnstile, verified by Supabase Auth. The browser receives only the site key; the secret lives in Supabase Auth configuration, not in the application.
+- Hosted Supabase has all seven tracked migrations through `20260901035852_demo_ledger_seed.sql`. Remote history matches local and remote error-level lint reports no schema errors. The ledger remains the only durable application record; the Worker is stateless and may only claim/reconcile notification events through narrow service-role RPCs.
+- Public signup and the demo entry point both use Cloudflare Turnstile, verified by Supabase Auth rather than by the application. The browser receives only the site key; the secret lives in Supabase Auth configuration. Supabase Auth has anonymous sign-ins and CAPTCHA protection enabled, and both were confirmed against the running project.
 - The `gyst-reminders` Cloudflare Worker is deployed with a UTC `*/15 * * * *` Cron Trigger. It has no D1, KV, R2, or ledger-write capability outside the reviewed Supabase reminder RPCs.
 - Resend is connected to Production and `geekindad.com` is verified. The Worker uses a server-only From address. A one-message real-recipient delivery test was accepted and reported delivered by Resend.
 - Legacy Supabase `anon` and `service_role` JWT keys are disabled. The application uses the publishable key and the Worker uses the newer secret key, both held only in provider configuration.
@@ -21,7 +21,7 @@ Last verified — 2026-09-01:
 
 Saving a daily or weekly draft persists correctly but renders no confirmation message. The record is written and survives a reload; only the on-screen acknowledgement is missing. This predates the judge demo work and is reproducible on `main`. It is the cause of the two failing Playwright specs.
 
-Historical production activation evidence is retained in [docs/deployment/production-a5-a9-evidence-2026-08-30.md](docs/deployment/production-a5-a9-evidence-2026-08-30.md); it records the narrower 2026-08-30 scope and is not the current status.
+Current release evidence is [docs/deployment/production-judge-demo-evidence-2026-09-01.md](docs/deployment/production-judge-demo-evidence-2026-09-01.md). Historical production activation evidence is retained in [docs/deployment/production-a5-a9-evidence-2026-08-30.md](docs/deployment/production-a5-a9-evidence-2026-08-30.md); it records the narrower 2026-08-30 scope and is not the current status.
 
 ## Local development
 
@@ -74,5 +74,6 @@ supabase migration list --local
 - `docs/database/README.md` — database state, local workflow, migrations, and RLS evidence requirements
 - `docs/deployment/README.md` — Vercel/Cloudflare state, verification, rollback, and release boundaries
 - `docs/deployment/production-wave6-evidence-2026-09-01.md` — sanitized Wave 6 provider and release evidence
+- `docs/deployment/production-judge-demo-evidence-2026-09-01.md` — sanitized judge demo provider and release evidence
 - `docs/submission/README.md` — competition readiness and outstanding evidence
 - `AGENTS.md` — concise repository rules for coding agents
