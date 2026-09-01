@@ -3,16 +3,21 @@
   "name": "gyst-reminders",
   "main": "src/index.ts",
   "compatibility_date": "2026-08-29",
+  "compatibility_flags": ["nodejs_compat"],
   "account_id": "ed685203e1b5ec469e54c751753fe5b5",
   "observability": {
-    "enabled": true
+    "enabled": true,
+    "logs": { "head_sampling_rate": 1 }
   },
   "env": {
     "staging": {
       "name": "gyst-reminders-staging"
     },
     "production": {
-      "name": "gyst-reminders"
+      "name": "gyst-reminders",
+      "triggers": {
+        "crons": ["*/15 * * * *"]
+      }
     }
   }
 
