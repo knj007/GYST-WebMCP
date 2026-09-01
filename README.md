@@ -4,28 +4,18 @@ GYST is a human-owned daily and weekly ritual ledger. The application can read b
 
 ## Current checkpoint
 
-Latest verified checkpoint — 2026-08-31:
+Last verified — 2026-09-01:
 
-- `main` is `076f1a5` (PR #6), which merged the daily and weekly ordinary-form flows, bounded weekly findings, and the local-only fictional demo seed.
-- Hosted Supabase has all five tracked migrations through `20260831135035_weekly_context_patterns_and_commit.sql`; remote migration history and error-level lint pass. Advisors have no security or error finding, only empty-ledger informational unused-index notices.
-- Local evidence passes: 5 pgTAP files / 177 assertions, 7 Vitest files / 20 tests, and 3 Playwright tests, plus lint, typecheck, and production build.
-- `supabase/seed.sql` remains deterministic and fictional. An isolated fictional production Auth account and fictional ledger were additionally created solely to verify the browser-reachable Wave 5 preview; no real personal data was used.
-- Wave 5 is verified on the `codex/wave5-webmcp` preview: all fourteen draft-only tools discover on active authenticated daily/weekly routes, reject oversized input, update drafts only, and disappear off ritual routes. Human commit controls remain separate. Turnstile, reminders, exports, deletion, merge/release, and final submission artifacts remain unfinished.
+- Production is [gyst-web-mcp.vercel.app](https://gyst-web-mcp.vercel.app). `main` includes Wave 6 through merge commit `09f4fae` (PR #12).
+- Hosted Supabase has all six tracked migrations through `20260901004116_reminder_delivery_rpc.sql`. The ledger remains the only durable application record; the Worker is stateless and may only claim/reconcile notification events through narrow service-role RPCs.
+- Public signup uses Cloudflare Turnstile. Tokens are verified server-side before Supabase Auth signup; the browser receives only the site key.
+- The `gyst-reminders` Cloudflare Worker is deployed with a UTC `*/15 * * * *` Cron Trigger. It has no D1, KV, R2, or ledger-write capability outside the reviewed Supabase reminder RPCs.
+- Resend is connected to Production and `geekindad.com` is verified. The Worker uses a server-only From address. A one-message real-recipient delivery test was accepted and reported delivered by Resend.
+- Legacy Supabase `anon` and `service_role` JWT keys are disabled. The application uses the publishable key and the Worker uses the newer secret key, both held only in provider configuration.
+- Wave 5's fourteen WebMCP tools remain draft/read-only. They cannot commit or delete ledger records; normal human commit controls remain separate.
+- Local release verification for Wave 6 passed 214 pgTAP assertions, 49 Vitest tests, app and Worker type checks, lint, production build, Worker dry-run, and Supabase lint/advisors.
 
-Historical checkpoint:
-
-Before PR #4, GitHub `main` resolved to `c576e08d7a3151dc8cff7939ae56f347633f4263` (the documentation-only merge of PR #3). The production application's A5/A9 activation baseline is `04851f557d24d4c43d65106ba5f4beb302613191`; the subsequent documentation-only merge did not change application code. The approved Wave 2 migration is present in production, and the two browser-safe Supabase values have been configured in Vercel Production under separate A5 approval:
-
-- Production: <https://gyst-web-mcp.vercel.app>
-- Next.js App Router: public landing/sign-in plus request-dynamic authenticated `/daily` and `/weekly` shells
-- Supabase clients: pinned browser/server SSR clients using only the publishable key, cookie refresh in Proxy, and centralized `getClaims()` authorization
-- Hosted Supabase: Postgres 17 with `20260830160046` remediation plus `20260830194920` Wave 2 application schema; the local Wave 3 branch additionally has the unreviewed `20260830211216_daily_ritual_commit` migration
-- Production ledger: 11 empty application tables, RLS enabled on every table, no `anon` application-table privileges, and operation-specific `authenticated` policies
-- Database evidence: the production Wave 2 gate passed at 120 pgTAP assertions. The local Wave 3 redesign replays with 157 assertions and error-level lint; its local W3 evidence gate is complete but it remains unapplied and unapproved for production.
-- Performance advisors: local post-pgTAP has three expected informational unused-index notices; the new, empty production schema has 18 informational unused-index notices and no security/error finding
-- Reminder Worker: local skeleton and successful Wrangler dry runs only
-
-The production homepage is healthy. `/daily` now redirects an unauthenticated visitor to `/login`, confirming that the application can read its browser-safe Supabase configuration; no real user was created or signed in for this check. The current local Wave 3 branch has an ordinary daily draft form, an atomic draft-save RPC, and a validated daily-close RPC. Its human-only boundary is application/WebMCP capability: WebMCP has no commit tool, while the database guarantees ownership, required fields, atomic close/event creation, and post-commit immutability for authenticated owner actions. Local W3 evidence passes 157 pgTAP assertions, 5 Vitest files / 15 tests, and 2 Playwright tests with a fictional local-only identity; focused application and database reviews are approved. This work remains unmerged and unapplied to production. Weekly ritual, WebMCP draft tools, reminders, Turnstile, Resend, and demo ledger still need to be built. See [the production activation evidence](docs/deployment/production-a5-a9-evidence-2026-08-30.md) for the sanitized A5/A9 record.
+Historical production activation evidence is retained in [docs/deployment/production-a5-a9-evidence-2026-08-30.md](docs/deployment/production-a5-a9-evidence-2026-08-30.md); it records the narrower 2026-08-30 scope and is not the current status.
 
 ## Local development
 
@@ -77,5 +67,6 @@ supabase migration list --local
 - `docs/EXECUTION_RUNBOOK.md` — ownership, approval gates, execution waves, and the dated status checkpoint
 - `docs/database/README.md` — database state, local workflow, migrations, and RLS evidence requirements
 - `docs/deployment/README.md` — Vercel/Cloudflare state, verification, rollback, and release boundaries
+- `docs/deployment/production-wave6-evidence-2026-09-01.md` — sanitized Wave 6 provider and release evidence
 - `docs/submission/README.md` — competition readiness and outstanding evidence
 - `AGENTS.md` — concise repository rules for coding agents

@@ -21,6 +21,6 @@
     }
   }
 
-  // The production Cron Trigger is intentionally omitted until approval gate A4.
+  // The production Cron Trigger is deployed after the Wave 6 approval gate.
   // Provider credentials belong in encrypted Wrangler secrets, never in this file.
 }
