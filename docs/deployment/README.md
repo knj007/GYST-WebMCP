@@ -37,16 +37,22 @@ Current production state:
 
 The judge demo depends on two hosted Supabase Auth settings that no migration, test, or CI check can observe, and whose absence fails open rather than closed. Verify them against the running project and record the result in the release evidence packet.
 
-```bash
-# 1. Anonymous sign-ins must be ENABLED: expect an access_token, not a 422.
-curl -s -X POST "$SUPABASE_URL/auth/v1/signup"   -H "apikey: $SUPABASE_PUBLISHABLE_KEY" -H "content-type: application/json" -d '{}'
+**Check 1 — captcha must be ENFORCED.** This is the check that matters, because this setting fails open. A junk token must be rejected; an `access_token` in the response means the endpoint is unprotected.
 
-# 2. Captcha must be ENFORCED: expect a rejection, NOT an access_token.
-#    A success here means the endpoint is unprotected.
+```bash
 curl -s -X POST "$SUPABASE_URL/auth/v1/signup"   -H "apikey: $SUPABASE_PUBLISHABLE_KEY" -H "content-type: application/json"   -d '{"gotrue_meta_security":{"captcha_token":"not-a-real-token"}}'
 ```
 
-Delete any anonymous identity these checks create. Both must pass before `main` is merged, because Vercel Git integration deploys `main` on merge.
+This check is non-mutating: a rejected request creates no user.
+
+**Verified 2026-09-01.** All three probes against the production project were rejected with `captcha_failed` and created no user: anonymous signup with a junk token (`invalid-input-response`), anonymous signup with no token (`no captcha_token found`), and email signup with no token (`no captcha_token found`). Cloudflare returning `invalid-input-response` rather than `invalid-input-secret` also confirms the configured Turnstile secret is valid. Captcha runs ahead of the provider check, which is why Check 2 below cannot be answered by curl.
+
+**Check 2 — anonymous sign-ins must be ENABLED.** Once captcha is on, curl cannot answer this: a tokenless request is rejected by captcha before the provider is consulted, so `anonymous_provider_disabled` and a captcha error are indistinguishable from the outside. Confirm it one of two ways instead:
+
+- the **Anonymous sign-ins** toggle at `/dashboard/project/<ref>/auth/providers`, or
+- the real thing — load the deployed site and click **Open the demo**. The widget issues a genuine token, so a successful landing on `/daily` with a populated ledger proves captcha issuance, anonymous sign-in, and seeding all at once. This is the authoritative check and belongs in the release evidence.
+
+Both must hold before `main` is merged, because Vercel Git integration deploys `main` on merge.
 
 ## Anonymous identity retention
 
