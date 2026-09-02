@@ -1,6 +1,6 @@
 # Deployment and Provider Guide
 
-Last verified: 2026-09-01
+Last verified: 2026-09-02
 
 ## Vercel production
 
@@ -20,7 +20,7 @@ PR #12 merged as `09f4fae` after Vercel checks passed. Vercel Git integration de
 | Output directory | Next.js default |
 | Node.js | 24.x |
 | Production URL | `https://gyst-web-mcp.vercel.app` |
-| Current application release | `7c4009b` (PR #15) |
+| Current application release | `e5d664a` (PR #22) |
 | Historical activation evidence | `docs/deployment/production-a5-a9-evidence-2026-08-30.md` |
 
 Current production state:
@@ -30,9 +30,9 @@ Current production state:
 - The judge demo signs a visitor in anonymously and seeds a fictional ledger scoped to that throwaway identity. Both required Supabase Auth settings are enabled and were confirmed against the running project on 2026-09-01: anonymous sign-ins, and Turnstile CAPTCHA protection. The anonymous sign-in endpoint is publicly reachable with the browser's publishable key, so captcha is its only abuse control and an application-side check cannot substitute for it.
 - Vercel Production holds browser-safe Supabase URL and publishable-key configuration. The app never receives a Supabase secret key.
 - The Resend Marketplace integration supplies `RESEND_API_KEY` to Vercel Production for provider management. The deployed reminder Worker receives its own encrypted Cloudflare secret; no key value is stored in this repository.
-- Daily/weekly ordinary flows and fourteen draft/read-only WebMCP tools are merged and deployed. WebMCP still cannot commit or delete ledger records.
+- Daily/weekly ordinary flows and the WebMCP surface are merged and deployed: fourteen ritual tools (seven daily, seven weekly) plus three read-only status/navigation tools registered before hydration. All seventeen are read-only or draft-only; WebMCP still cannot commit or delete ledger records.
 - Wave 6.5 adds a signed-in `/settings/schedule` page for daily and weekly ritual reminders. The matching forward-only Supabase migration was applied before the PR merge because the Git integration deploys `main`. The Worker delivery contract, encrypted secrets, and Cron Trigger are unchanged.
-- Current release evidence is [production-judge-demo-evidence-2026-09-01.md](production-judge-demo-evidence-2026-09-01.md). The Wave 6 record at [production-wave6-evidence-2026-09-01.md](production-wave6-evidence-2026-09-01.md) and the dated A5/A9 record remain historical evidence for their narrower scopes.
+- Current release evidence is [production-wave8-submission-evidence-2026-09-02.md](production-wave8-submission-evidence-2026-09-02.md). The judge demo record at [production-judge-demo-evidence-2026-09-01.md](production-judge-demo-evidence-2026-09-01.md), the Wave 6 record at [production-wave6-evidence-2026-09-01.md](production-wave6-evidence-2026-09-01.md), and the dated A5/A9 record remain historical evidence for their narrower scopes.
 
 ## Auth gate verification (run before every release)
 
