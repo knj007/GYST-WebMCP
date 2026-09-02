@@ -29,6 +29,14 @@ supabase/.branches/
 # This is a public repository, so anything placed here would publish with it.
 docs/product/
 
+# Agent tooling fetched into the working tree
+#
+# Vendored third-party skill packs and their lockfile are local development
+# aids, unrelated to this project. This is a public repository, so they would
+# publish with it.
+.agents/
+skills-lock.json
+
 # Local release-verification output
 .wave8-verification/
 
