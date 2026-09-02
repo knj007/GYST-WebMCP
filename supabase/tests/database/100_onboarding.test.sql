@@ -1,6 +1,6 @@
 begin;
 
-select plan(132);
+select plan(151);
 
 -- Identities:
 --   A  onboards by hand, with no profile row beforehand
@@ -10,6 +10,8 @@ select plan(132);
 --   E  backfill fixture that owns nothing
 --   F  anonymous demo session
 --   G  owner with a goal and no profile row (timezone fallback)
+--   H  anonymous session that inserts a draft row directly before seeding
+--   I  owner who already has a profile row and an earlier onboarded_at
 insert into auth.users (id, email)
 values
   ('aa100000-0000-4000-8000-000000000001', 'onboard-a@example.test'),
@@ -18,10 +20,14 @@ values
   ('aa100000-0000-4000-8000-000000000004', 'onboard-d@example.test'),
   ('aa100000-0000-4000-8000-000000000005', 'onboard-e@example.test'),
   ('aa100000-0000-4000-8000-000000000006', null),
-  ('aa100000-0000-4000-8000-000000000007', 'onboard-g@example.test');
+  ('aa100000-0000-4000-8000-000000000007', 'onboard-g@example.test'),
+  ('aa100000-0000-4000-8000-000000000008', null),
+  ('aa100000-0000-4000-8000-000000000009', 'onboard-i@example.test');
 
-insert into public.profiles (user_id, display_name, timezone)
-values ('aa100000-0000-4000-8000-000000000002', 'Owner B', 'UTC');
+insert into public.profiles (user_id, display_name, timezone, onboarded_at)
+values
+  ('aa100000-0000-4000-8000-000000000002', 'Owner B', 'UTC', null),
+  ('aa100000-0000-4000-8000-000000000009', 'Owner I', 'UTC', '2026-01-01 00:00:00+00');
 
 insert into public.goals (id, user_id, title)
 values ('a9100000-0000-4000-8000-000000000001', 'aa100000-0000-4000-8000-000000000007', 'Loose goal');
@@ -291,6 +297,15 @@ select throws_ok(
   '22023', null::text,
   'a null onboarding draft payload is rejected'
 );
+select throws_ok(
+  format(
+    $$select * from public.save_onboarding_draft(%L::jsonb, %s)$$,
+    jsonb_build_object('areas', '[]'::jsonb, 'notes', repeat('x', 262144)),
+    (select version from public.onboarding_drafts where user_id = 'aa100000-0000-4000-8000-000000000001')
+  ),
+  '22023', 'onboarding draft is too large',
+  'a draft over 256 KiB is rejected at save'
+);
 
 -- Owner B cannot reach A's draft ----------------------------------------------
 
@@ -484,6 +499,60 @@ select throws_ok(
   ),
   '22023', 'timezone is required',
   'a draft without a timezone is rejected at commit'
+);
+
+select lives_ok(
+  format(
+    $$select * from public.save_onboarding_draft(%L::jsonb, %s)$$,
+    jsonb_set(current_setting('gyst_test.draft_valid')::jsonb, '{timezone}', '"UTC+5"'::jsonb),
+    (select version from public.onboarding_drafts where user_id = 'aa100000-0000-4000-8000-000000000001')
+  ),
+  'a draft with a POSIX offset timezone can be saved'
+);
+select throws_ok(
+  format(
+    $$select * from public.commit_onboarding(%L, %s)$$,
+    current_setting('gyst_test.draft_a'),
+    (select version from public.onboarding_drafts where user_id = 'aa100000-0000-4000-8000-000000000001')
+  ),
+  '22023', 'timezone must be a valid IANA time zone name',
+  'a POSIX offset such as UTC+5 is not an IANA zone and is rejected'
+);
+
+select lives_ok(
+  format(
+    $$select * from public.save_onboarding_draft(%L::jsonb, %s)$$,
+    jsonb_set(current_setting('gyst_test.draft_valid')::jsonb, '{timezone}', '"XYZ7"'::jsonb),
+    (select version from public.onboarding_drafts where user_id = 'aa100000-0000-4000-8000-000000000001')
+  ),
+  'a draft with a POSIX abbreviation timezone can be saved'
+);
+select throws_ok(
+  format(
+    $$select * from public.commit_onboarding(%L, %s)$$,
+    current_setting('gyst_test.draft_a'),
+    (select version from public.onboarding_drafts where user_id = 'aa100000-0000-4000-8000-000000000001')
+  ),
+  '22023', 'timezone must be a valid IANA time zone name',
+  'a POSIX abbreviation such as XYZ7 is not an IANA zone and is rejected'
+);
+
+select lives_ok(
+  format(
+    $$select * from public.save_onboarding_draft(%L::jsonb, %s)$$,
+    jsonb_set(current_setting('gyst_test.draft_valid')::jsonb, '{areas,1,key}', '" work "'::jsonb),
+    (select version from public.onboarding_drafts where user_id = 'aa100000-0000-4000-8000-000000000001')
+  ),
+  'a draft whose keys collide after trimming can be saved'
+);
+select throws_ok(
+  format(
+    $$select * from public.commit_onboarding(%L, %s)$$,
+    current_setting('gyst_test.draft_a'),
+    (select version from public.onboarding_drafts where user_id = 'aa100000-0000-4000-8000-000000000001')
+  ),
+  '22023', 'area keys must be unique',
+  'keys that collide after trimming are rejected as duplicates'
 );
 
 select lives_ok(
@@ -916,6 +985,50 @@ select is(
   'the day-one close appends the done event for the founding commitment'
 );
 
+-- An owner with an existing profile row takes the on-conflict path ---------------
+
+select set_config('request.jwt.claim.sub', 'aa100000-0000-4000-8000-000000000009', true);
+
+select set_config(
+  'gyst_test.draft_i',
+  (
+    select onboarding_draft_id::text from public.save_onboarding_draft(
+      $json${
+        "display_name": null,
+        "timezone": "Europe/Paris",
+        "areas": [{"key": "a", "title": "Only area", "description": null}],
+        "goals": [{"key": "g", "area_key": "a", "title": "Only goal", "description": null, "target_date": null, "priority": 2}],
+        "commitments": [{"goal_key": "g", "title": "First real promise", "details": null, "due_on": null}]
+      }$json$::jsonb
+    )
+  ),
+  true
+);
+select lives_ok(
+  format($$select * from public.commit_onboarding(%L, 1)$$, current_setting('gyst_test.draft_i')),
+  'an owner who already has a profile row can commit onboarding'
+);
+select is(
+  (select display_name from public.profiles where user_id = 'aa100000-0000-4000-8000-000000000009'),
+  'Owner I',
+  'a null draft display name preserves the existing profile display name'
+);
+select is(
+  (select timezone from public.profiles where user_id = 'aa100000-0000-4000-8000-000000000009'),
+  'Europe/Paris',
+  'the existing profile timezone is replaced by the explicit draft timezone'
+);
+select is(
+  (select version from public.profiles where user_id = 'aa100000-0000-4000-8000-000000000009'),
+  2::bigint,
+  'the existing profile version is bumped once'
+);
+select is(
+  (select onboarded_at from public.profiles where user_id = 'aa100000-0000-4000-8000-000000000009'),
+  '2026-01-01 00:00:00+00'::timestamptz,
+  'an existing onboarded_at is preserved rather than overwritten'
+);
+
 -- add_commitment ---------------------------------------------------------------
 
 select set_config('request.jwt.claim.sub', 'aa100000-0000-4000-8000-000000000001', true);
@@ -1009,14 +1122,12 @@ select throws_ok(
   '42501', null::text,
   'add_commitment refuses another owner''s goal without revealing it'
 );
-reset role;
 select is(
-  (select count(*) from public.commitments where user_id = 'aa100000-0000-4000-8000-000000000001'),
-  5::bigint,
-  'the refused cross-owner add creates nothing'
+  (select count(*) from public.commitments where user_id = 'aa100000-0000-4000-8000-000000000002'),
+  0::bigint,
+  'the refused cross-owner add creates nothing under the caller'
 );
 
-set local role authenticated;
 select set_config('request.jwt.claim.sub', 'aa100000-0000-4000-8000-000000000007', true);
 select lives_ok(
   $$select * from public.add_commitment('a9100000-0000-4000-8000-000000000001', 'Promise without a profile')$$,
@@ -1100,6 +1211,56 @@ select is(
   (select count(*) from public.commitments where user_id = 'aa100000-0000-4000-8000-000000000006'),
   4::bigint,
   'the demo persona is unchanged'
+);
+select throws_ok(
+  $$select * from public.save_onboarding_draft('{}'::jsonb)$$,
+  '42501', 'demo sessions cannot onboard',
+  'a demo session cannot save an onboarding draft'
+);
+select throws_ok(
+  format($$select * from public.commit_onboarding(%L, 1)$$, current_setting('gyst_test.draft_a')),
+  '42501', 'demo sessions cannot onboard',
+  'a demo session cannot commit onboarding'
+);
+select lives_ok(
+  format(
+    $$select * from public.add_commitment(%L, 'Demo promise')$$,
+    (select id from public.goals where user_id = 'aa100000-0000-4000-8000-000000000006' and title = 'Publish the imaginary field guide')
+  ),
+  'a demo session can still add a commitment under its own active goal'
+);
+select is(
+  (
+    select count(*) from public.commitment_events
+     where user_id = 'aa100000-0000-4000-8000-000000000006'
+       and kind = 'created'
+       and title_snapshot = 'Demo promise'
+  ),
+  1::bigint,
+  'the demo add_commitment appends exactly one created event'
+);
+
+-- A demo identity that already owns any ledger row, including a directly
+-- inserted onboarding draft, is never seeded on top of it.
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"aa100000-0000-4000-8000-000000000008","role":"authenticated","is_anonymous":true}',
+  true
+);
+select lives_ok(
+  $$insert into public.onboarding_drafts (user_id, draft)
+    values ('aa100000-0000-4000-8000-000000000008', '{}'::jsonb)$$,
+  'an anonymous session may still insert its own draft row directly'
+);
+select is(
+  (select public.seed_demo_ledger() ->> 'reason'),
+  'already_prepared',
+  'the demo seed refuses an identity that already owns an onboarding draft'
+);
+select is(
+  (select count(*) from public.areas where user_id = 'aa100000-0000-4000-8000-000000000008'),
+  0::bigint,
+  'the refused seed writes nothing'
 );
 
 -- Whole-account deletion still cascades through the founding statement ------------

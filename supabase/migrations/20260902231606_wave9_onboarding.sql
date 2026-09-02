@@ -217,12 +217,16 @@ begin
   v_display_name := gyst_private.onboarding_draft_text(v_draft -> 'display_name', 'display_name', 120, false);
   v_timezone := gyst_private.onboarding_draft_text(v_draft -> 'timezone', 'timezone', 100, true);
 
-  begin
-    perform now() at time zone v_timezone;
-  exception
-    when others then
-      raise exception 'timezone must be a valid IANA time zone name' using errcode = '22023';
-  end;
+  -- Exact IANA name only. "at time zone" would also accept POSIX strings such
+  -- as UTC+5, whose sign is inverted and which the application cannot format.
+  select zone.name
+    into v_timezone
+    from pg_catalog.pg_timezone_names as zone
+   where zone.name = v_timezone;
+
+  if v_timezone is null then
+    raise exception 'timezone must be a valid IANA time zone name' using errcode = '22023';
+  end if;
 
   v_today := (now() at time zone v_timezone)::date;
 
@@ -436,7 +440,7 @@ begin
   on conflict (user_id) do update
     set display_name = coalesce(excluded.display_name, profiles.display_name),
         timezone = excluded.timezone,
-        onboarded_at = now(),
+        onboarded_at = coalesce(profiles.onboarded_at, now()),
         version = profiles.version + 1;
 
   new.committed_at := now();
@@ -517,8 +521,18 @@ begin
     raise exception 'authentication is required' using errcode = '42501';
   end if;
 
+  -- A demo session receives its fictional ledger from seed_demo_ledger() and
+  -- must never found a real one.
+  if coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false) then
+    raise exception 'demo sessions cannot onboard' using errcode = '42501';
+  end if;
+
   if p_draft is null or jsonb_typeof(p_draft) <> 'object' then
     raise exception 'onboarding draft must be an object' using errcode = '22023';
+  end if;
+
+  if octet_length(p_draft::text) > 262144 then
+    raise exception 'onboarding draft is too large' using errcode = '22023';
   end if;
 
   foreach v_field in array array['display_name', 'timezone']
@@ -617,6 +631,10 @@ declare
 begin
   if v_user_id is null then
     raise exception 'authentication is required' using errcode = '42501';
+  end if;
+
+  if coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false) then
+    raise exception 'demo sessions cannot onboard' using errcode = '42501';
   end if;
 
   select *
@@ -786,9 +804,15 @@ begin
     raise exception 'the demo ledger is only available to a demo session' using errcode = '42501';
   end if;
 
-  -- Never overwrite an existing ledger. A demo session that wants a clean
-  -- slate takes a new anonymous identity; committed records stay immutable.
-  if exists (select 1 from public.ritual_sessions where user_id = v_user_id) then
+  -- Never overwrite or extend an existing ledger, however it came to exist.
+  -- A demo session that wants a clean slate takes a new anonymous identity;
+  -- committed records stay immutable.
+  if exists (select 1 from public.ritual_sessions where user_id = v_user_id)
+    or exists (select 1 from public.areas where user_id = v_user_id)
+    or exists (select 1 from public.goals where user_id = v_user_id)
+    or exists (select 1 from public.commitments where user_id = v_user_id)
+    or exists (select 1 from public.onboarding_drafts where user_id = v_user_id)
+  then
     return jsonb_build_object('seeded', false, 'reason', 'already_prepared');
   end if;
 
