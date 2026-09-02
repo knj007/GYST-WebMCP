@@ -2,28 +2,29 @@
 
 import { redirect } from "next/navigation";
 
+import { isSignInChallengeConfigured, signInWithTurnstile } from "@/lib/auth/sign-in";
 import { readSupabasePublicConfig } from "@/lib/supabase/config";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export async function signIn(formData: FormData) {
-  const emailValue = formData.get("email");
-  const passwordValue = formData.get("password");
-  const email = typeof emailValue === "string" ? emailValue.trim().toLowerCase() : "";
-  const password = typeof passwordValue === "string" ? passwordValue : "";
-
-  if (!email || email.length > 320 || !password || password.length > 1024) {
-    redirect("/login?error=invalid");
-  }
-
   if (!readSupabasePublicConfig()) {
     redirect("/login?reason=configuration");
   }
 
-  const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const result = await signInWithTurnstile(
+    {
+      email: formData.get("email"),
+      password: formData.get("password"),
+      turnstileToken: formData.get("turnstileToken"),
+    },
+    {
+      createClient: createServerSupabaseClient,
+      requiresChallenge: isSignInChallengeConfigured(),
+    },
+  );
 
-  if (error) {
-    redirect("/login?error=credentials");
+  if (!result.ok) {
+    redirect(`/login?error=${result.code}`);
   }
 
   redirect("/daily");
