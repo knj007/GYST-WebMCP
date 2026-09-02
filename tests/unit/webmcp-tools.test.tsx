@@ -52,8 +52,20 @@ describe("WebMCP ritual lifecycle", () => {
   test("explains when the browser does not expose WebMCP", async () => {
     vi.useFakeTimers();
     render(<WebMcpTools periodStart="2026-09-01" ritual="daily" />);
-    await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(250); });
     expect(screen.getByText(/Agent assistance is unavailable in this browser/i)).toBeTruthy();
+  });
+
+  test("names registration errors instead of silently reporting a partial surface", async () => {
+    const warning = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    document.modelContext = { registerTool: vi.fn(async (tool, { signal }) => {
+      if (tool.name === "gyst.record_moved") throw new DOMException("Duplicate tool", "InvalidStateError");
+      registrations.push({ signal, tool });
+    }) };
+    render(<WebMcpTools periodStart="2026-09-01" ritual="daily" />);
+    expect(await screen.findByText(/1 unavailable \(InvalidStateError\)/i)).toBeTruthy();
+    expect(warning).toHaveBeenCalledWith("[WebMCP] Failed to register gyst.record_moved: InvalidStateError", expect.any(DOMException));
+    warning.mockRestore();
   });
 
   test("waits for a late WebMCP host before declaring it unavailable", async () => {

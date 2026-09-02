@@ -6,6 +6,7 @@ import { describe, expect, test } from "vitest";
 const repositoryRoot = process.cwd();
 const dailyActionsPath = join(repositoryRoot, "src", "app", "(ritual)", "daily", "actions.ts");
 const webMcpToolsPath = join(repositoryRoot, "src", "lib", "webmcp");
+const rootLayoutPath = join(repositoryRoot, "src", "app", "layout.tsx");
 
 describe("WebMCP daily capability boundary", () => {
   test("registers only the fourteen draft/read tools and never a commit or delete tool", () => {
@@ -31,5 +32,15 @@ describe("WebMCP daily capability boundary", () => {
 
     expect(draftAction).not.toContain("commit_daily_ritual");
     expect(actions.match(/commit_daily_ritual/g)).toHaveLength(1);
+  });
+
+  test("registers only read-only or navigation recovery tools before hydration", () => {
+    const rootLayout = readFileSync(rootLayoutPath, "utf8");
+    const recoveryToolNames = Array.from(rootLayout.matchAll(/name: "(gyst\.[^"]+)"/g), (match) => match[1]);
+
+    expect(rootLayout).toContain('strategy="beforeInteractive"');
+    expect(rootLayout).toContain('typeof context.registerTool !== "function"');
+    expect(recoveryToolNames).toEqual(["gyst.get_status", "gyst.open_daily_ritual", "gyst.open_weekly_ritual"]);
+    expect(rootLayout).not.toMatch(/gyst\.(?:commit|delete|export|sql|history)/i);
   });
 });
