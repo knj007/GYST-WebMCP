@@ -1,8 +1,21 @@
 # Database and RLS Guide
 
-Last verified: 2026-09-01
+Last verified: 2026-09-02
 
 ## Current state
+
+### Wave 9 onboarding — 2026-09-02 (local branch `codex/wave9-onboarding`, not applied to the hosted project)
+
+- `20260902231606_wave9_onboarding.sql` is local only. It requires a new remote migration gate and must not reach the hosted project before the 2026-09-03 submission gate closes.
+- `profiles.onboarded_at timestamptz` is the onboarding gate. The migration backfills it once for every existing profile that owns at least one commitment or one committed ritual session; after that the column alone decides. A missing profile row counts as not onboarded.
+- `public.onboarding_drafts` is the founding statement: one row per owner (`user_id` unique, cascading from `auth.users`), `draft jsonb` (object), `status public.ritual_status`, `version`, `committed_at`, and `founding_commitment_id` with a composite `(user_id, founding_commitment_id)` foreign key to `commitments`. RLS is owner-only: select own, insert own draft, update own while in draft (the `WITH CHECK` allows the draft-to-committed transition, as the ritual policy does). There is no delete policy and no delete grant; `anon` has nothing. A private guard trigger makes a committed row immutable except inside a whole-account deletion cascade.
+- The fan-out lives at the ledger boundary. `gyst_private.complete_onboarding_commit()` fires on the draft-to-committed transition and, in that one statement, validates the draft, inserts `areas`, `goals`, `key_dates`, and `commitments`, appends one `created` event per commitment, creates the completed founding commitment titled `Founded this GYST ledger`, upserts the profile with the explicit timezone and display name, and sets `onboarded_at`. Any failure raises `22023` (shape or content) or `23514` (no active commitment) and rolls the whole transition back, so a direct authenticated `UPDATE ... SET status = 'committed'` cannot skip validation any more than the RPC can.
+- `save_onboarding_draft(p_draft jsonb, p_expected_version bigint default null)` and `commit_onboarding(p_onboarding_draft_id uuid, p_expected_version bigint)` are a `SECURITY INVOKER` pair mirroring the daily split: the save never commits, requires the current version once a row exists (`40001`), and refuses a committed row (`23514`); the commit requires a non-null matching version (`40001`), returns the same values idempotently on replay, and reports a foreign or unknown draft as `42501`.
+- `add_commitment(p_goal_id uuid, p_title text, p_details text default null, p_due_on date default null)` is the owner-scoped pump: it inserts one active commitment under an owned active goal and exactly one `created` event dated in the owner's profile timezone (`UTC` when no profile row exists). A goal that is not owned or does not exist is `42501`; a non-active goal is `23514`; bad text is `22023`. Granted to `authenticated` only; WebMCP never receives it.
+- `seed_demo_ledger()` is re-created with the same fictional persona and now sets `onboarded_at`, so a demo session never meets the gate.
+- Two pure validators, `gyst_private.onboarding_draft_text` and `gyst_private.onboarding_draft_date`, are executable by `authenticated` for the same reason the weekly validator is: the invoker-authority trigger calls them under the owner role, and they read no table.
+- `100_onboarding.test.sql` adds 132 assertions: invoker authority and grants, `anon` refusal, cross-owner isolation of the draft and the commit, draft saves that never commit, optimistic concurrency, atomic rejection of a dangling key, an over-long title, zero commitments, an unknown or missing timezone, a bad priority and a malformed date, the complete founding commit with resolved relations and events, immutability of the committed row, the day-one daily close against the founding commitment, `add_commitment` behaviour, the backfill predicate, the demo seed gate, and whole-account cascade through the founding statement. Fresh local reset and pgTAP pass 10 files / 402 assertions; local lint reports no finding at any level.
+- Regenerating `src/lib/db/database.types.ts` from the local schema reverts three hand-written nullability annotations on `save_ritual_reminder_schedule` that the generator cannot infer; see the Wave 9 handoff for the orchestrator decision.
 
 ### Wave 7 ownership and deletion release — 2026-09-01
 
@@ -64,6 +77,7 @@ The local ledger contains:
 - `commitment_events`
 - `reminder_rules`
 - `notification_events`
+- `onboarding_drafts` (Wave 9, local branch)
 
 Every table has a stable UUID primary key, a required `user_id`, a composite `(user_id, id)` ownership key, a positive version, and timezone-aware creation/update timestamps. Child relationships carry `user_id` in composite foreign keys. This makes cross-owner parent links fail at the constraint boundary rather than relying on application filtering.
 
@@ -72,6 +86,7 @@ The Data API surface is explicit:
 - `anon` has no privileges on application tables.
 - `authenticated` receives owner-filtered CRUD only where the ordinary application needs it.
 - `profiles` cannot be deleted by the browser role.
+- `onboarding_drafts` cannot be deleted by the browser role, and a committed draft cannot be updated by anyone outside a whole-account deletion cascade.
 - `commitment_events` are append-only for `authenticated` and have a trigger-level append-only guard.
 - `notification_events` are read-only for `authenticated`; the deployed reminder Worker uses the narrow service-role claim/reconciliation RPC path described above.
 - All policies are operation-specific. Updates have both `USING` and `WITH CHECK` predicates.
