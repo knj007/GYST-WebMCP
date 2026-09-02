@@ -1,14 +1,10 @@
 import { expect, test } from "@playwright/test";
 
 import { localDailyE2EIdentity } from "./global-setup";
+import { signInAsLocalOwner } from "./sign-in";
 
 test("an authenticated local owner can save, resume, and commit the ordinary daily form", async ({ page }) => {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill(localDailyE2EIdentity.email);
-  await page.getByLabel("Password").fill(localDailyE2EIdentity.password);
-  await page.getByRole("button", { name: "Sign in" }).click();
-
-  await expect(page).toHaveURL(/\/daily$/);
+  await signInAsLocalOwner(page);
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Close the day with intention, Local E2E.");
   await expect(page.getByRole("button", { name: "Save draft" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Commit today" })).toBeVisible();

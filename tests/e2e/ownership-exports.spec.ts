@@ -4,6 +4,7 @@ import { expect, test } from "@playwright/test";
 import type { Database } from "../../src/lib/db/database.types";
 import { getLocalSupabaseEnvironment } from "./local-supabase";
 import { localDailyE2EIdentity } from "./global-setup";
+import { signInAsLocalOwner } from "./sign-in";
 
 test("an owner export has exactly the committed ritual rows owned by the local database fixture", async ({ page }) => {
   const { apiUrl, serviceRoleKey } = getLocalSupabaseEnvironment();
@@ -50,11 +51,7 @@ test("an owner export has exactly the committed ritual rows owned by the local d
       .eq("user_id", otherUserId);
     if (commitError) throw commitError;
 
-    await page.goto("/login");
-    await page.getByLabel("Email").fill(localDailyE2EIdentity.email);
-    await page.getByLabel("Password").fill(localDailyE2EIdentity.password);
-    await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page).toHaveURL(/\/daily$/);
+    await signInAsLocalOwner(page);
 
     const response = await page.evaluate(async () => {
       const exportResponse = await fetch("/api/exports/json");
