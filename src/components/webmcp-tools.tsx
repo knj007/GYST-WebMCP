@@ -12,6 +12,8 @@ type MutationResult = { effect: string; message: string; uncommitted: true; upda
 declare global { interface Document { modelContext?: ModelContext } }
 
 const emptySchema = { type: "object", additionalProperties: false, properties: {} } as const;
+const modelContextRetryIntervalMs = 50;
+const modelContextWaitMs = 5000;
 const text = (maximum: number) => ({ type: "string", minLength: 1, maxLength: maximum });
 const uuid = { type: "string", pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$" } as const;
 const blockerSchema = {
@@ -67,14 +69,20 @@ export function WebMcpTools({ periodStart, ritual }: { periodStart: string; ritu
   const tools = ritual === "daily" ? dailyTools : weeklyTools;
   useEffect(() => { const listener = (event: Event) => { const detail = (event as CustomEvent<{ fields: string[]; name: string }>).detail; markAgentDraftFields(ritualKey, detail.fields); setChanges((current) => [detail, ...current].slice(0, 5)); router.refresh(); }; window.addEventListener("gyst:webmcp-draft-updated", listener); return () => window.removeEventListener("gyst:webmcp-draft-updated", listener); }, [ritualKey, router]);
   useEffect(() => {
-    const context = document.modelContext;
-    if (!context) {
-      const unavailable = window.setTimeout(() => setRegisteredCount(-1), 0);
-      return () => window.clearTimeout(unavailable);
-    }
     const controller = new AbortController(); let active = true;
-    void Promise.all(tools.map((tool) => context.registerTool(tool, { signal: controller.signal }).then(() => true).catch(() => false))).then((registered) => { if (active) setRegisteredCount(registered.filter(Boolean).length); });
-    return () => { active = false; controller.abort(); };
+    const deadline = Date.now() + modelContextWaitMs;
+    let retryTimer: number | undefined;
+    const register = () => {
+      const context = document.modelContext;
+      if (!context || typeof context.registerTool !== "function") {
+        if (active && Date.now() < deadline) retryTimer = window.setTimeout(register, modelContextRetryIntervalMs);
+        else if (active) setRegisteredCount(-1);
+        return;
+      }
+      void Promise.all(tools.map((tool) => context.registerTool(tool, { signal: controller.signal }).then(() => true).catch(() => false))).then((registered) => { if (active) setRegisteredCount(registered.filter(Boolean).length); });
+    };
+    register();
+    return () => { active = false; if (retryTimer !== undefined) window.clearTimeout(retryTimer); controller.abort(); };
   }, [tools]);
   const capability = registeredCount === null ? "Checking whether agent assistance is available…" : registeredCount === -1 ? "Agent assistance is unavailable in this browser. Your normal draft form remains fully available." : registeredCount === tools.length ? `Agent assistance is ready: all ${tools.length} draft-only tools are available in this tab.` : `Agent assistance is partially available: ${registeredCount} of ${tools.length} draft-only tools registered.`;
   return <section className="mt-6 space-y-3" aria-label="Agent assistance">
