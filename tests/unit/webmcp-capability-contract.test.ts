@@ -3,6 +3,8 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
+import { webMcpSiteToolsScript } from "@/lib/webmcp/site-tools-script";
+
 const repositoryRoot = process.cwd();
 const dailyActionsPath = join(repositoryRoot, "src", "app", "(ritual)", "daily", "actions.ts");
 const webMcpToolsPath = join(repositoryRoot, "src", "lib", "webmcp");
@@ -36,11 +38,29 @@ describe("WebMCP daily capability boundary", () => {
 
   test("registers only read-only or navigation recovery tools before hydration", () => {
     const rootLayout = readFileSync(rootLayoutPath, "utf8");
-    const recoveryToolNames = Array.from(rootLayout.matchAll(/name: "(gyst\.[^"]+)"/g), (match) => match[1]);
+    const recoveryToolNames = Array.from(webMcpSiteToolsScript.matchAll(/name: "(gyst\.[^"]+)"/g), (match) => match[1]);
 
     expect(rootLayout).toContain('strategy="beforeInteractive"');
-    expect(rootLayout).toContain('typeof context.registerTool !== "function"');
+    expect(webMcpSiteToolsScript).toContain('typeof context.registerTool !== "function"');
     expect(recoveryToolNames).toEqual(["gyst.get_status", "gyst.open_daily_ritual", "gyst.open_weekly_ritual"]);
     expect(rootLayout).not.toMatch(/gyst\.(?:commit|delete|export|sql|history)/i);
+  });
+
+  test("retries the early recovery surface when WebMCP becomes available after the first script check", async () => {
+    const scheduled: Array<() => void> = [];
+    const registrations: string[] = [];
+    type FakeDocument = { modelContext: undefined | { registerTool: (tool: { name: string }) => Promise<void> } };
+    type FakeWindow = { location: { assign: () => void; pathname: string }; setTimeout: (callback: () => void) => number };
+    const fakeDocument: FakeDocument = { modelContext: undefined };
+    const fakeWindow: FakeWindow = { location: { assign: () => undefined, pathname: "/login" }, setTimeout: (callback) => { scheduled.push(callback); return scheduled.length; } };
+    const runScript = new Function("document", "window", "console", webMcpSiteToolsScript) as (document: FakeDocument, window: FakeWindow, console: Pick<Console, "warn">) => void;
+
+    runScript(fakeDocument, fakeWindow, console);
+    expect(scheduled).toHaveLength(1);
+    fakeDocument.modelContext = { registerTool: async ({ name }) => { registrations.push(name); } };
+    scheduled.shift()!();
+    await Promise.resolve();
+
+    expect(registrations).toEqual(["gyst.get_status", "gyst.open_daily_ritual", "gyst.open_weekly_ritual"]);
   });
 });
