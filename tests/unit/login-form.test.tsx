@@ -18,6 +18,7 @@ afterEach(() => {
 function mountWidget() {
   let callback: ((token: string) => void) | undefined;
   window.turnstile = {
+    remove: vi.fn(),
     render: (_container, options) => {
       callback = options.callback;
       return "widget-id";

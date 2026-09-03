@@ -32,5 +32,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "workers", ".wave8-verification"]
+  "exclude": ["node_modules", "workers"]
 }

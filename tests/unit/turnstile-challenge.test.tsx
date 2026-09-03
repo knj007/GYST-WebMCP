@@ -70,6 +70,43 @@ test("renders the widget once when the script load event arrives after mount", (
   expect(stub.rendered).toHaveLength(1);
 });
 
+test("renders once the in-flight script element finishes loading", () => {
+  // The third arrival: `next/script` records the source as loaded the moment the
+  // request starts, so a component mounted during a later hop while the source is
+  // still in flight gets no `onLoad` of its own and finds no API to render against.
+  const script = document.createElement("script");
+  script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+  document.body.append(script);
+
+  try {
+    render(<TurnstileChallenge onError={noop} onExpire={noop} onToken={noop} siteKey="public-site-key" />);
+    const stub = stubTurnstile();
+    expect(stub.rendered).toHaveLength(0);
+
+    script.dispatchEvent(new Event("load"));
+
+    expect(stub.rendered).toHaveLength(1);
+  } finally {
+    script.remove();
+  }
+});
+
+test("reports a rejected site key instead of throwing out of the mount effect", () => {
+  const stub = stubTurnstile();
+  window.turnstile!.render = () => {
+    throw new Error("invalid sitekey");
+  };
+  const onError = vi.fn();
+
+  // Turnstile throws on a key it rejects. From a mount effect an uncaught throw
+  // would take down the tree, so it has to surface as an ordinary failure.
+  expect(() =>
+    render(<TurnstileChallenge onError={onError} onExpire={noop} onToken={noop} siteKey="rejected-site-key" />),
+  ).not.toThrow();
+  expect(onError).toHaveBeenCalledTimes(1);
+  expect(stub.rendered).toHaveLength(0);
+});
+
 test("reports the solved token, expiry, and failure to its owner", async () => {
   const stub = stubTurnstile();
   const onError = vi.fn();

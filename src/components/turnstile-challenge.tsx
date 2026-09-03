@@ -4,7 +4,7 @@ import Script from "next/script";
 import { useCallback, useEffect, useImperativeHandle, useRef, type Ref } from "react";
 
 type TurnstileApi = {
-  remove?: (widgetId: string) => void;
+  remove: (widgetId: string) => void;
   render: (container: HTMLElement, options: {
     callback: (token: string) => void;
     "error-callback": () => void;
@@ -46,7 +46,8 @@ const scriptSrc = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=
  * navigation therefore mounts with `window.turnstile` already defined and no
  * further `load` event coming, so waiting on `onLoad` alone leaves the widget
  * unrendered and the submit control disabled until the visitor refreshes.
- * Rendering on mount as well covers both arrivals.
+ * This renders on mount as well, and covers the third arrival -- mounting while
+ * the source is still in flight -- by listening to the script element itself.
  */
 export function TurnstileChallenge({ onError, onExpire, onToken, ref, siteKey }: TurnstileChallengeProps) {
   const widgetContainer = useRef<HTMLDivElement>(null);
@@ -65,22 +66,45 @@ export function TurnstileChallenge({ onError, onExpire, onToken, ref, siteKey }:
       return;
     }
 
-    widgetId.current = window.turnstile.render(widgetContainer.current, {
-      callback: (token) => callbacks.current.onToken(token),
-      "error-callback": () => callbacks.current.onError(),
-      "expired-callback": () => callbacks.current.onExpire(),
-      sitekey: siteKey,
-    });
+    try {
+      widgetId.current = window.turnstile.render(widgetContainer.current, {
+        callback: (token) => callbacks.current.onToken(token),
+        "error-callback": () => callbacks.current.onError(),
+        "expired-callback": () => callbacks.current.onExpire(),
+        sitekey: siteKey,
+      });
+    } catch {
+      // Turnstile throws on a site key it rejects. That used to surface from the
+      // script's own load handler, outside React; raising it from a mount effect
+      // would take down the tree instead, so report it the way Turnstile reports
+      // its own failures and leave the submit control locked.
+      widgetId.current = undefined;
+      callbacks.current.onError();
+    }
   }, [siteKey]);
 
   useEffect(() => {
     mounted.current = true;
     renderWidget();
 
+    // `next/script` records the source as loaded as soon as the request starts,
+    // so a component mounted during a later client-side hop while the source is
+    // still in flight is skipped outright: no `load` event of its own, and no API
+    // to render against yet. Listening to the pending element resolves that
+    // arrival too, instead of stranding the challenge until a refresh.
+    const pending = document.querySelector<HTMLScriptElement>(`script[src="${scriptSrc}"]`);
+    pending?.addEventListener("load", renderWidget);
+
     return () => {
+      pending?.removeEventListener("load", renderWidget);
       mounted.current = false;
       if (widgetId.current) {
-        window.turnstile?.remove?.(widgetId.current);
+        try {
+          window.turnstile?.remove(widgetId.current);
+        } catch {
+          // A widget Cloudflare has already discarded is not worth a crash on the
+          // way out; the container leaves with the component regardless.
+        }
         widgetId.current = undefined;
       }
     };
