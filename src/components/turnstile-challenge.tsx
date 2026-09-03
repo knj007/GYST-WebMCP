@@ -1,0 +1,103 @@
+"use client";
+
+import Script from "next/script";
+import { useCallback, useEffect, useImperativeHandle, useRef, type Ref } from "react";
+
+type TurnstileApi = {
+  remove?: (widgetId: string) => void;
+  render: (container: HTMLElement, options: {
+    callback: (token: string) => void;
+    "error-callback": () => void;
+    "expired-callback": () => void;
+    sitekey: string;
+  }) => string;
+  reset: (widgetId?: string) => void;
+};
+
+declare global {
+  interface Window {
+    turnstile?: TurnstileApi;
+  }
+}
+
+export type TurnstileChallengeHandle = {
+  /** Discard the solved token and ask Cloudflare for a fresh challenge. */
+  reset: () => void;
+};
+
+type TurnstileChallengeProps = {
+  onError: () => void;
+  onExpire: () => void;
+  onToken: (token: string) => void;
+  ref?: Ref<TurnstileChallengeHandle>;
+  siteKey: string;
+};
+
+// One shared id so every challenge on the site resolves to the same `next/script`
+// cache entry, instead of colliding implicitly on the source URL.
+const scriptId = "cloudflare-turnstile";
+const scriptSrc = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+
+/**
+ * The explicit Cloudflare Turnstile widget, mounted so it survives navigation.
+ *
+ * `next/script` calls `onLoad` from the script's `load` event, and it loads the
+ * source at most once per full page load. A form reached by a client-side
+ * navigation therefore mounts with `window.turnstile` already defined and no
+ * further `load` event coming, so waiting on `onLoad` alone leaves the widget
+ * unrendered and the submit control disabled until the visitor refreshes.
+ * Rendering on mount as well covers both arrivals.
+ */
+export function TurnstileChallenge({ onError, onExpire, onToken, ref, siteKey }: TurnstileChallengeProps) {
+  const widgetContainer = useRef<HTMLDivElement>(null);
+  const widgetId = useRef<string | undefined>(undefined);
+  const mounted = useRef(false);
+
+  // Callbacks are read through a ref so that a parent re-render never re-renders
+  // the widget, which would throw away a challenge the visitor already solved.
+  const callbacks = useRef({ onError, onExpire, onToken });
+  useEffect(() => {
+    callbacks.current = { onError, onExpire, onToken };
+  });
+
+  const renderWidget = useCallback(() => {
+    if (!mounted.current || !widgetContainer.current || widgetId.current || !window.turnstile) {
+      return;
+    }
+
+    widgetId.current = window.turnstile.render(widgetContainer.current, {
+      callback: (token) => callbacks.current.onToken(token),
+      "error-callback": () => callbacks.current.onError(),
+      "expired-callback": () => callbacks.current.onExpire(),
+      sitekey: siteKey,
+    });
+  }, [siteKey]);
+
+  useEffect(() => {
+    mounted.current = true;
+    renderWidget();
+
+    return () => {
+      mounted.current = false;
+      if (widgetId.current) {
+        window.turnstile?.remove?.(widgetId.current);
+        widgetId.current = undefined;
+      }
+    };
+  }, [renderWidget]);
+
+  useImperativeHandle(ref, () => ({
+    reset: () => {
+      if (widgetId.current) {
+        window.turnstile?.reset(widgetId.current);
+      }
+    },
+  }), []);
+
+  return (
+    <>
+      <Script id={scriptId} onLoad={renderWidget} src={scriptSrc} strategy="afterInteractive" />
+      <div aria-label="Verification challenge" ref={widgetContainer} />
+    </>
+  );
+}
