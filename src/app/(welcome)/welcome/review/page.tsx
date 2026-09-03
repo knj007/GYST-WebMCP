@@ -36,7 +36,10 @@ function DraftSummary({ draft }: { draft: OnboardingDraft }) {
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Key dates</p>
                   <ul className="mt-1 list-disc pl-5 text-sm">
                     {byGoal(draft.key_dates, goal.key).map((keyDate, index) => (
-                      <li key={`${goal.key}-date-${index}`}>{keyDate.title} — {keyDate.kind}{keyDate.due_on ? ` on ${keyDate.due_on}` : ""}</li>
+                      <li key={`${goal.key}-date-${index}`}>
+                        {keyDate.title} — {keyDate.kind}{keyDate.due_on ? ` on ${keyDate.due_on}` : ""}
+                        {keyDate.notes ? <p className="mt-1 text-muted">{keyDate.notes}</p> : null}
+                      </li>
                     ))}
                   </ul>
                 </div>
@@ -46,7 +49,10 @@ function DraftSummary({ draft }: { draft: OnboardingDraft }) {
                 {byGoal(draft.commitments, goal.key).length ? (
                   <ul className="mt-1 list-disc pl-5 text-sm">
                     {byGoal(draft.commitments, goal.key).map((commitment, index) => (
-                      <li key={`${goal.key}-commitment-${index}`}>{commitment.title}{commitment.due_on ? ` · due ${commitment.due_on}` : ""}</li>
+                      <li key={`${goal.key}-commitment-${index}`}>
+                        {commitment.title}{commitment.due_on ? ` · due ${commitment.due_on}` : ""}
+                        {commitment.details ? <p className="mt-1 text-muted">{commitment.details}</p> : null}
+                      </li>
                     ))}
                   </ul>
                 ) : <p className="mt-1 text-sm text-muted">None under this goal.</p>}

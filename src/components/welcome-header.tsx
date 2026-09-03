@@ -12,6 +12,9 @@ export function WelcomeHeader({ displayName }: { displayName: string }) {
         </Link>
         <WelcomeSteps />
         <div className="flex items-center gap-5 text-sm text-muted">
+          <Link className="transition-colors hover:text-foreground" href="/settings/account">
+            Account
+          </Link>
           <span className="hidden text-foreground sm:inline">{displayName}</span>
           <form action={signOut}>
             <button className="transition-colors hover:text-foreground" type="submit">

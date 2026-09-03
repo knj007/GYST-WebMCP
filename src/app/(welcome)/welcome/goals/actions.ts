@@ -1,5 +1,7 @@
 "use server";
 
+import { unstable_rethrow } from "next/navigation";
+
 import { getCurrentProfile } from "@/lib/auth/session";
 import { readOnboardingDraft, readOnboardingDraftVersion } from "@/lib/onboarding/draft";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -60,6 +62,8 @@ export async function saveOnboardingDraft(
       version: data.version,
     };
   } catch (error) {
+    // A redirect thrown by requireUser is a framework signal, not a failure.
+    unstable_rethrow(error);
     return {
       message: error instanceof Error ? error.message : "Unable to save the onboarding draft.",
       status: "error",

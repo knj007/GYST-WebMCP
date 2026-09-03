@@ -3,7 +3,23 @@ import "server-only";
 import { redirect } from "next/navigation";
 
 import { getCurrentProfile } from "@/lib/auth/session";
-import { type WelcomeStage, welcomeRedirect } from "@/lib/onboarding/gate";
+import { type WelcomeStage, needsOnboarding, welcomeRedirect } from "@/lib/onboarding/gate";
+
+/**
+ * Admit only an owner whose ledger is founded (or a demo session) to a ritual
+ * page; a new owner is sent to the welcome pages instead. The ritual layout
+ * does not hold this gate, so `/settings/account` stays reachable before
+ * onboarding and account deletion is never blocked behind founding a ledger.
+ */
+export async function requireOnboarded() {
+  const state = await getCurrentProfile();
+
+  if (needsOnboarding({ isDemo: state.identity.isDemo, profile: state.profile })) {
+    redirect("/welcome");
+  }
+
+  return state;
+}
 
 /**
  * Admit the current identity to one welcome stage or send it where it belongs.

@@ -1,6 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 
 import { getCurrentProfile } from "@/lib/auth/session";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -75,6 +75,8 @@ export async function commitOnboarding(
 
     committed = true;
   } catch (error) {
+    // A redirect thrown by requireUser is a framework signal, not a failure.
+    unstable_rethrow(error);
     if (!demo) {
       return {
         message: error instanceof Error ? error.message : "Unable to commit the founding statement.",

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 
 import { getCurrentProfile } from "@/lib/auth/session";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -54,6 +55,8 @@ export async function addCommitment(
     revalidatePath("/weekly");
     return { message: "Commitment added. It is active and can be chosen as tomorrow’s commitment.", status: "success" };
   } catch (error) {
+    // A redirect thrown by requireUser is a framework signal, not a failure.
+    unstable_rethrow(error);
     return { message: error instanceof Error ? error.message : "Unable to add the commitment.", status: "error" };
   }
 }

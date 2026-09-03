@@ -75,6 +75,7 @@ test("a new owner founds the ledger by hand and commits a first daily ritual", a
 
   await page.getByRole("button", { name: "Add commitment" }).click();
   await commitmentTitle.fill("Outline the first chapter");
+  await page.getByLabel("Details").fill("Two pages, plain language.");
 
   await page.getByRole("button", { name: "Save draft" }).click();
   await expect(page.getByText("Draft saved. Nothing is committed until you review it.")).toBeVisible();
@@ -91,6 +92,8 @@ test("a new owner founds the ledger by hand and commits a first daily ritual", a
   await expect(page.getByText("This founding statement is immutable and dated")).toBeVisible();
   await expect(page.getByText("Publish the fictional field guide")).toBeVisible();
   await expect(page.getByText("Outline the first chapter")).toBeVisible();
+  // Agent-settable free text is shown before it is committed.
+  await expect(page.getByText("Two pages, plain language.")).toBeVisible();
 
   await page.getByRole("button", { name: "Commit founding statement" }).click();
   await expect(page).toHaveURL(/\/welcome\/rhythm$/);

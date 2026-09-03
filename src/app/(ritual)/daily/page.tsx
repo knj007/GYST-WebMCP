@@ -2,9 +2,11 @@ import { AddCommitmentForm } from "@/components/add-commitment-form";
 import { DailyRitualForm } from "@/components/daily-ritual-form";
 import { WebMcpTools } from "@/components/webmcp-tools";
 import { getActiveGoals } from "@/lib/commitments/goals";
+import { requireOnboarded } from "@/lib/onboarding/access";
 import { getDailyRitual } from "@/lib/rituals/daily";
 
 export default async function DailyPage() {
+  await requireOnboarded();
   const [{ commitments, entry, periodStart, previousCommitments, profile, session }, goals] = await Promise.all([
     getDailyRitual(),
     getActiveGoals(),

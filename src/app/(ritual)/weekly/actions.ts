@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { getWeekStart } from "@/lib/rituals/weekly";
 import { readWeeklyDraft } from "@/lib/rituals/weekly-draft";
@@ -39,6 +40,7 @@ export async function saveWeeklyDraft(_state: WeeklyActionState, formData: FormD
     await persistWeeklyDraft(formData);
     return { message: "Weekly draft saved. Only you can commit the final record.", status: "success" };
   } catch (error) {
+    unstable_rethrow(error);
     return { message: error instanceof Error ? error.message : "Unable to save the weekly draft.", status: "error" };
   }
 }
@@ -56,6 +58,7 @@ export async function commitWeeklyRitual(_state: WeeklyActionState, formData: Fo
     revalidatePath("/weekly");
     return { message: "Weekly ritual committed. The record is now immutable.", status: "success" };
   } catch (error) {
+    unstable_rethrow(error);
     if (error instanceof Error && error.message === "this weekly ritual is already committed") {
       revalidatePath("/weekly");
       return { message: "Weekly ritual committed. The record is now immutable.", status: "success" };

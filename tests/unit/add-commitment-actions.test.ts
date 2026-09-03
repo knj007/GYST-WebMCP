@@ -77,7 +77,11 @@ describe("add commitment action", () => {
 
   test("is reachable from no WebMCP library or route", () => {
     const root = process.cwd();
-    const files = [...sourceFiles(join(root, "src", "lib", "webmcp")), ...sourceFiles(join(root, "src", "app", "api", "webmcp"))];
+    const files = [
+      ...sourceFiles(join(root, "src", "lib", "webmcp")),
+      ...sourceFiles(join(root, "src", "app", "api", "webmcp")),
+      join(root, "src", "components", "webmcp-tools.tsx"),
+    ];
     expect(files.length).toBeGreaterThan(0);
     for (const file of files) {
       const source = readFileSync(file, "utf8");

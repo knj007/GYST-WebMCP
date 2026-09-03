@@ -10,6 +10,9 @@ vi.mock("next/navigation", () => ({
     mocks.redirect(destination);
     throw new Error(`NEXT_REDIRECT:${destination}`);
   },
+  unstable_rethrow: (error: unknown) => {
+    if (error instanceof Error && error.message.startsWith("NEXT_REDIRECT:")) throw error;
+  },
 }));
 vi.mock("@/lib/auth/session", () => ({ getCurrentProfile: mocks.getCurrentProfile }));
 vi.mock("@/lib/supabase/server", () => ({ createServerSupabaseClient: vi.fn(async () => ({ rpc: mocks.rpc })) }));
@@ -55,6 +58,14 @@ describe("onboarding draft-save action", () => {
       draftId, message: "Draft saved. Nothing is committed until you review it.", status: "success", version: 3,
     });
     expect(mocks.rpc).toHaveBeenCalledWith("save_onboarding_draft", { p_draft: expect.objectContaining({ timezone: "America/Chicago" }), p_expected_version: 2 });
+  });
+
+  test("lets a sign-in redirect thrown by requireUser escape the catch", async () => {
+    mocks.getCurrentProfile.mockRejectedValueOnce(new Error("NEXT_REDIRECT:/login"));
+    await expect(saveOnboardingDraft(initial, form())).rejects.toThrow("NEXT_REDIRECT:/login");
+    mocks.getCurrentProfile.mockRejectedValueOnce(new Error("NEXT_REDIRECT:/login"));
+    await expect(commitOnboarding(initial, form({ draft_id: draftId, draft_version: "1" }))).rejects.toThrow("NEXT_REDIRECT:/login");
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
   test("refuses a demo session before any RPC", async () => {

@@ -17,7 +17,7 @@ Last verified — 2026-09-02:
 - The WebMCP surface is nineteen ritual tools — seven on the daily ritual, seven on the weekly, five on first-run onboarding — plus three read-only status and navigation tools registered before hydration so an agent arriving early can still orient itself. Every one of the twenty-two is read-only or draft-only. There is no commit, delete, export, history, or SQL tool, and a unit test fails the build if one appears. Normal human commit controls remain separate.
 - Signed-in owners can configure, pause, and resume daily and weekly ritual email reminders from `/settings/schedule`. Schedules use the owner's profile timezone; first use safely initializes that profile from the browser timezone. The browser role calls one owner-scoped `SECURITY INVOKER` RPC, while the Worker remains the only delivery actor.
 - Signed-in owners can export their committed ledger as portable `gyst-portable-v1` JSON or Markdown, take an explicit full backup that includes drafts, and permanently delete the account. Export is owner-scoped and deliberately has no WebMCP tool.
-- Local verification passes 9 pgTAP files / 270 assertions, 24 Vitest files / 116 tests, app and Worker type checks, lint, production build, Worker dry-run, local and remote Supabase lint, local/remote migration parity, and all six Playwright specs.
+- Local verification on 2026-09-02 passes 10 pgTAP files / 421 assertions, 33 Vitest files / 179 tests, app and Worker type checks, lint, production build, Worker dry-run, local and remote Supabase lint, local/remote migration parity, and all seven Playwright specs.
 
 ### Draft-save acknowledgement
 

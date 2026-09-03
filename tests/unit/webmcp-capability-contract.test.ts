@@ -23,7 +23,13 @@ describe("WebMCP daily capability boundary", () => {
     expect(registration).toContain('{ required: ["text", "type"] }');
     expect(toolNames.some((name) => /^gyst\.(?:commit|delete|export|sql|history)/i.test(name))).toBe(false);
 
-    const forbiddenRpcs = ["commit_daily_ritual", "commit_weekly_ritual", "commit_onboarding", "add_commitment"];
+    // RPC names, the human-only action names, and their module paths: no
+    // WebMCP source may reach a commit or an add-commitment by any route.
+    const forbiddenRpcs = [
+      "commit_daily_ritual", "commit_weekly_ritual", "commit_onboarding", "add_commitment",
+      "commitDailyRitual", "commitWeeklyRitual", "commitOnboarding", "addCommitment",
+      "commitments/actions", "review/actions",
+    ];
     const webMcpSources = [
       ...readdirSync(webMcpToolsPath).map((file) => join(webMcpToolsPath, file)),
       join(repositoryRoot, "src", "app", "api", "webmcp", "daily", "route.ts"),

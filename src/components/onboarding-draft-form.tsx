@@ -205,6 +205,10 @@ export function OnboardingDraftForm({ draft, draftKey, draftVersion }: Onboardin
                   <label className={labelClass} htmlFor={`key-date-due-${keyDate.key}`}>Date</label>
                   <input className={`${field} bg-surface`} id={`key-date-due-${keyDate.key}`} name={`key_dates.${index}.due_on`} onChange={(event) => update(setKeyDates, keyDate.key, { due_on: event.target.value || null }, "key_dates")} required type="date" value={keyDate.due_on ?? ""} />
                 </div>
+                <div className="sm:col-span-2">
+                  <label className={labelClass} htmlFor={`key-date-notes-${keyDate.key}`}>Notes <span className="font-normal text-muted">Optional</span></label>
+                  <textarea className={`${field} min-h-16 bg-surface`} id={`key-date-notes-${keyDate.key}`} maxLength={onboardingLimits.text.key_date_notes} name={`key_dates.${index}.notes`} onChange={(event) => update(setKeyDates, keyDate.key, { notes: event.target.value }, "key_dates")} value={keyDate.notes ?? ""} />
+                </div>
               </div>
               <button className="mt-3 text-sm text-muted underline" onClick={() => remove(setKeyDates, keyDate.key, "key_dates")} type="button">Remove key date</button>
             </div>
@@ -232,6 +236,10 @@ export function OnboardingDraftForm({ draft, draftKey, draftVersion }: Onboardin
                 <div>
                   <label className={labelClass} htmlFor={`commitment-due-${commitment.key}`}>Due date <span className="font-normal text-muted">Optional</span></label>
                   <input className={`${field} bg-surface`} id={`commitment-due-${commitment.key}`} name={`commitments.${index}.due_on`} onChange={(event) => update(setCommitments, commitment.key, { due_on: event.target.value || null }, "commitments")} type="date" value={commitment.due_on ?? ""} />
+                </div>
+                <div>
+                  <label className={labelClass} htmlFor={`commitment-details-${commitment.key}`}>Details <span className="font-normal text-muted">Optional</span></label>
+                  <textarea className={`${field} min-h-16 bg-surface`} id={`commitment-details-${commitment.key}`} maxLength={onboardingLimits.text.commitment_details} name={`commitments.${index}.details`} onChange={(event) => update(setCommitments, commitment.key, { details: event.target.value }, "commitments")} value={commitment.details ?? ""} />
                 </div>
               </div>
               <button className="mt-3 text-sm text-muted underline" onClick={() => remove(setCommitments, commitment.key, "commitments")} type="button">Remove commitment</button>
