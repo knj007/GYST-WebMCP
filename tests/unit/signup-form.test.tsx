@@ -17,6 +17,7 @@ test("resets Turnstile after a failed signup response", async () => {
   const reset = vi.fn();
   let callback: ((token: string) => void) | undefined;
   window.turnstile = {
+    remove: vi.fn(),
     render: (_container, options) => {
       callback = options.callback;
       return "widget-id";
@@ -40,6 +41,7 @@ test("resets Turnstile after a failed signup response", async () => {
 test("shows the confirmation result after successful signup", async () => {
   let callback: ((token: string) => void) | undefined;
   window.turnstile = {
+    remove: vi.fn(),
     render: (_container, options) => {
       callback = options.callback;
       return "widget-id";

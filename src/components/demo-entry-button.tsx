@@ -1,65 +1,22 @@
 "use client";
 
-import Script from "next/script";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
-type TurnstileApi = {
-  render: (
-    container: HTMLElement,
-    options: {
-      callback: (token: string) => void;
-      "error-callback": () => void;
-      "expired-callback": () => void;
-      sitekey: string;
-    },
-  ) => string;
-  reset: (widgetId?: string) => void;
-};
-
-declare global {
-  interface Window {
-    turnstile?: TurnstileApi;
-  }
-}
+import { TurnstileChallenge, type TurnstileChallengeHandle } from "@/components/turnstile-challenge";
 
 const demoDestinations = ["/daily"] as const;
 
 export function DemoEntryButton({ siteKey }: { siteKey: string }) {
   const router = useRouter();
-  const widgetContainer = useRef<HTMLDivElement>(null);
-  const widgetId = useRef<string | undefined>(undefined);
+  const challenge = useRef<TurnstileChallengeHandle>(null);
   const [message, setMessage] = useState("");
   const [starting, setStarting] = useState(false);
   const [token, setToken] = useState("");
 
   function resetChallenge() {
     setToken("");
-    if (widgetId.current) {
-      window.turnstile?.reset(widgetId.current);
-    }
-  }
-
-  function renderWidget() {
-    if (!widgetContainer.current || widgetId.current || !window.turnstile) {
-      return;
-    }
-
-    widgetId.current = window.turnstile.render(widgetContainer.current, {
-      callback: (nextToken) => {
-        setMessage("");
-        setToken(nextToken);
-      },
-      "error-callback": () => {
-        setToken("");
-        setMessage("Verification could not be completed. Please try again.");
-      },
-      "expired-callback": () => {
-        setToken("");
-        setMessage("Verification expired. Please complete the fresh challenge.");
-      },
-      sitekey: siteKey,
-    });
+    challenge.current?.reset();
   }
 
   async function start() {
@@ -97,11 +54,6 @@ export function DemoEntryButton({ siteKey }: { siteKey: string }) {
 
   return (
     <div className="space-y-3">
-      <Script
-        onLoad={renderWidget}
-        src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
-        strategy="afterInteractive"
-      />
       <button
         className="rounded-full bg-accent px-6 py-3 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
         disabled={starting || !token}
@@ -110,7 +62,22 @@ export function DemoEntryButton({ siteKey }: { siteKey: string }) {
       >
         {starting ? "Preparing the demo…" : "Open the demo"}
       </button>
-      <div aria-label="Verification challenge" ref={widgetContainer} />
+      <TurnstileChallenge
+        onError={() => {
+          setToken("");
+          setMessage("Verification could not be completed. Please try again.");
+        }}
+        onExpire={() => {
+          setToken("");
+          setMessage("Verification expired. Please complete the fresh challenge.");
+        }}
+        onToken={(nextToken) => {
+          setMessage("");
+          setToken(nextToken);
+        }}
+        ref={challenge}
+        siteKey={siteKey}
+      />
       {message ? (
         <p
           aria-live="polite"
