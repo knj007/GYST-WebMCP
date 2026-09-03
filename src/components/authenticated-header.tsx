@@ -23,6 +23,9 @@ export function AuthenticatedHeader({ displayName }: { displayName: string }) {
           <Link className="transition-colors hover:text-foreground" href={"/settings/account" as Route}>
             Account
           </Link>
+          <Link className="transition-colors hover:text-foreground" href="/faq">
+            FAQ
+          </Link>
           <span className="hidden text-foreground sm:inline">{displayName}</span>
           <form action={signOut}>
             <button className="transition-colors hover:text-foreground" type="submit">
