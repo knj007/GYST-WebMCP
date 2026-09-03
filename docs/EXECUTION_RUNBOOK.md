@@ -56,6 +56,16 @@ The earlier product plan remains the product specification. This runbook is the 
 
 ### 2.1 Current execution checkpoint — 2026-09-01
 
+#### Wave 9 update — 2026-09-02 (local only; not merged, not applied, not deployed)
+
+- Branch `codex/wave9-onboarding`, PR #25 against `main`, ready for review. Nothing from this wave merges, applies to the hosted project, or deploys before the 2026-09-03 submission gate closes; A8, A9, and A10 each still need their own approval.
+- Migration `20260902231606_wave9_onboarding.sql` is local and unapplied. It adds `profiles.onboarded_at` with a one-time backfill, `public.onboarding_drafts` with owner-scoped RLS and committed-row immutability, the `save_onboarding_draft` / `commit_onboarding` `SECURITY INVOKER` pair with the fan-out in the commit trigger, the `add_commitment` RPC, and `onboarded_at` on the demo seed. Onboarding RPCs refuse anonymous identities, validate the timezone against `pg_timezone_names`, and cap drafts at 256 KiB.
+- The onboarding gate lives in `requireOnboarded()` on the daily, weekly, and schedule pages, not the proxy. `/settings/account` stays reachable before onboarding. Demo sessions never see `/welcome`.
+- The WebMCP surface is nineteen ritual tools (seven daily, seven weekly, five onboarding) plus the three pre-hydration recovery tools. No commit, delete, export, sql, or history tool; the commit and add-commitment RPCs, their Server Actions, and their module paths are asserted absent from every WebMCP source. A coverage test fails if an onboarding tool gains a field the review page does not render.
+- Local verification on `cf3d55a`: 10 pgTAP files / 421 assertions, 33 Vitest files / 179 tests, 7 Playwright tests including the first-run path by hand and the unchanged demo entry, app typecheck, lint, production build, and local Supabase lint at every level.
+- Two independent review passes: a schema pass (two majors, closed: POSIX timezone acceptance and anonymous onboarding over the demo seed) and a full-diff pass (one major, closed: agent-proposed details and notes were committed unseen). Final verdict approve with no residual findings.
+- Recorded follow-ups, out of Wave 9 scope: retiring a commitment on a `done` score, and including the committed founding statement in the ownership exports.
+
 #### Wave 6.5 update — 2026-09-01
 
 - Owners can set, pause, and resume one daily and one weekly ritual reminder from `/settings/schedule`. The schedule uses the profile timezone and calculates a future local-time run; a first schedule save safely initializes a missing profile from the browser timezone.
