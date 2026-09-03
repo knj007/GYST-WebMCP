@@ -1,9 +1,16 @@
+import { AddCommitmentForm } from "@/components/add-commitment-form";
 import { DailyRitualForm } from "@/components/daily-ritual-form";
 import { WebMcpTools } from "@/components/webmcp-tools";
+import { getActiveGoals } from "@/lib/commitments/goals";
+import { requireOnboarded } from "@/lib/onboarding/access";
 import { getDailyRitual } from "@/lib/rituals/daily";
 
 export default async function DailyPage() {
-  const { commitments, entry, periodStart, profile, session } = await getDailyRitual();
+  await requireOnboarded();
+  const [{ commitments, entry, periodStart, previousCommitments, profile, session }, goals] = await Promise.all([
+    getDailyRitual(),
+    getActiveGoals(),
+  ]);
 
   return (
     <section className="rounded-[2rem] border border-line bg-surface p-8 sm:p-10">
@@ -18,7 +25,8 @@ export default async function DailyPage() {
       </p>
       {session?.status !== "committed" ? <aside className="mt-6 rounded-2xl border border-accent/20 bg-accent/5 p-5" aria-label="Daily check-in prompt"><p className="font-semibold">Ready for today’s check-in?</p><p className="mt-1 text-sm leading-6 text-muted">Start with what moved today, name anything that got in the way, then choose the one commitment to carry into tomorrow.</p></aside> : null}
       {session?.status !== "committed" ? <WebMcpTools periodStart={periodStart} ritual="daily" /> : null}
-      <DailyRitualForm key={session?.version ?? "new-daily-draft"} commitments={commitments} entry={entry} periodStart={periodStart} session={session} />
+      <DailyRitualForm key={session?.version ?? "new-daily-draft"} commitments={commitments} entry={entry} periodStart={periodStart} previousCommitments={previousCommitments} session={session} />
+      <AddCommitmentForm goals={goals} onboarded={profile?.onboarded_at !== null && profile?.onboarded_at !== undefined} />
     </section>
   );
 }

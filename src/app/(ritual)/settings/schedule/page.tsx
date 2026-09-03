@@ -1,7 +1,9 @@
 import { RitualReminderScheduleForm } from "@/components/ritual-reminder-schedule-form";
+import { requireOnboarded } from "@/lib/onboarding/access";
 import { getRitualReminderSchedules } from "@/lib/reminders/schedule";
 
 export default async function ReminderSchedulePage() {
+  await requireOnboarded();
   const { identity, profile, schedules } = await getRitualReminderSchedules();
   const daily = schedules.find((schedule) => schedule.ritual_kind === "daily");
   const weekly = schedules.find((schedule) => schedule.ritual_kind === "weekly");

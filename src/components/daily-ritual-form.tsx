@@ -9,7 +9,7 @@ import {
 import type { DailyRitual } from "@/lib/rituals/daily";
 import { useAgentDraftFields } from "@/lib/webmcp/draft-provenance";
 
-type DailyRitualFormProps = Pick<DailyRitual, "commitments" | "entry" | "periodStart" | "session">;
+type DailyRitualFormProps = Pick<DailyRitual, "commitments" | "entry" | "periodStart" | "previousCommitments" | "session">;
 
 const initialDailyActionState = { message: "", status: "idle" } as const;
 
@@ -25,7 +25,7 @@ function actionMessage(message: string, status: "error" | "idle" | "success") {
   );
 }
 
-export function DailyRitualForm({ commitments, entry, periodStart, session }: DailyRitualFormProps) {
+export function DailyRitualForm({ commitments, entry, periodStart, previousCommitments, session }: DailyRitualFormProps) {
   const [saveState, saveAction, saving] = useActionState(saveDailyDraft, initialDailyActionState);
   const [commitState, commitAction, committing] = useActionState(commitDailyRitual, initialDailyActionState);
   const provenance = useAgentDraftFields(`daily:${periodStart}`);
@@ -110,7 +110,7 @@ export function DailyRitualForm({ commitments, entry, periodStart, session }: Da
               required
             >
               <option value="">Choose a commitment</option>
-              {commitments.map((commitment) => (
+              {previousCommitments.map((commitment) => (
                 <option key={commitment.id} value={commitment.id}>
                   {commitment.title}
                 </option>

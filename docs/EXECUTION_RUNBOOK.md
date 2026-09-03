@@ -56,6 +56,16 @@ The earlier product plan remains the product specification. This runbook is the 
 
 ### 2.1 Current execution checkpoint — 2026-09-01
 
+#### Wave 9 update — 2026-09-02 (local only; not merged, not applied, not deployed)
+
+- Branch `codex/wave9-onboarding`, PR #25 against `main`, ready for review. Nothing from this wave merges, applies to the hosted project, or deploys before the 2026-09-03 submission gate closes; A8, A9, and A10 each still need their own approval.
+- Migration `20260902231606_wave9_onboarding.sql` is local and unapplied. It adds `profiles.onboarded_at` with a one-time backfill, `public.onboarding_drafts` with owner-scoped RLS and committed-row immutability, the `save_onboarding_draft` / `commit_onboarding` `SECURITY INVOKER` pair with the fan-out in the commit trigger, the `add_commitment` RPC, and `onboarded_at` on the demo seed. Onboarding RPCs refuse anonymous identities, validate the timezone against `pg_timezone_names`, and cap drafts at 256 KiB.
+- The onboarding gate lives in `requireOnboarded()` on the daily, weekly, and schedule pages, not the proxy. `/settings/account` stays reachable before onboarding. Demo sessions never see `/welcome`.
+- The WebMCP surface is nineteen ritual tools (seven daily, seven weekly, five onboarding) plus the three pre-hydration recovery tools. No commit, delete, export, sql, or history tool; the commit and add-commitment RPCs, their Server Actions, and their module paths are asserted absent from every WebMCP source. A coverage test fails if an onboarding tool gains a field the review page does not render.
+- Local verification on `cf3d55a`: 10 pgTAP files / 421 assertions, 33 Vitest files / 179 tests, 7 Playwright tests including the first-run path by hand and the unchanged demo entry, app typecheck, lint, production build, and local Supabase lint at every level.
+- Two independent review passes: a schema pass (two majors, closed: POSIX timezone acceptance and anonymous onboarding over the demo seed) and a full-diff pass (one major, closed: agent-proposed details and notes were committed unseen). Final verdict approve with no residual findings.
+- Recorded follow-ups, out of Wave 9 scope: retiring a commitment on a `done` score, and including the committed founding statement in the ownership exports.
+
 #### Wave 6.5 update — 2026-09-01
 
 - Owners can set, pause, and resume one daily and one weekly ritual reminder from `/settings/schedule`. The schedule uses the profile timezone and calculates a future local-time run; a first schedule save safely initializes a missing profile from the browser timezone.
@@ -699,6 +709,144 @@ Rollback plan:
 - Roll back Worker code independently from the Supabase ledger.
 - Rotate any secret suspected of exposure before continuing.
 - Never repair a release by disabling RLS or using a browser-exposed secret.
+
+### Wave 9 — First-run onboarding and the commitment lifecycle
+
+Target: post-submission. Local branch work on `codex/wave9-onboarding` may begin on 2026-09-02; nothing from this wave merges to `main`, applies to the hosted project, or deploys before the 2026-09-03 submission gate closes.
+Lead: application/WebMCP
+Co-lead: database/security
+Reviewers: orchestrator; one fresh QA/security/correctness reviewer per pull-request review pass; infrastructure/release for the proxy and release gate
+
+#### 9.1 Defect this wave repairs
+
+Wave 8 shipped a product a reviewer can complete and a new owner cannot. Three defects compound:
+
+1. `public.commitments` is inserted in exactly one place in the repository: `public.seed_demo_ledger()`. No application code path creates a commitment, area, goal, or key date. `areas`, `goals`, and `key_dates` are RLS-protected tables with zero application surface.
+2. `commit_daily_ritual` requires `next_commitment_id`, `previous_commitment_id`, and `previous_commitment_outcome` before it will close a day (`supabase/migrations/20260830211216_daily_ritual_commit.sql`). A new owner has no commitments to select and no prior promise to score, so the first daily ritual cannot be committed at all. The demo hides this by seeding a full closed prior week.
+3. Commitments are consumed and never produced. `commit_weekly_ritual` writes priorities as jsonb inside `weekly_entries.priorities` and creates no commitment rows; `commit_daily_ritual` writes a `commitment_events` row and does not alter `commitments.state`. Even a seeded owner has no way to add the next promise.
+
+Cut-order item 3 deferred the goals-management UI and retained "seeded goals and relational links." That cut was correct for the submission and is the direct cause of the defect. This wave repays it.
+
+#### 9.2 Scope
+
+Four authenticated pages before `/daily`, plus one ongoing write path:
+
+1. `/welcome` — orientation. What the ledger is, what the agent may and may not do, what committing means. Read-only.
+2. `/welcome/goals` — the interview and draft. A copyable agent prompt sits above a form that is fully completable by hand. These are one page, not two: the prompt is an optional accelerator, never a prerequisite.
+3. `/welcome/review` — the founding commit. The owner reviews the drafted areas, goals, key dates, and first commitments and commits them.
+4. `/welcome/rhythm` — reminder schedule, reusing the existing `/settings/schedule` form, plus a suggested daily/weekly agent skill as static content.
+
+Then `/daily`.
+
+Ongoing path: a human-only "add a commitment" control on the daily and weekly forms, so the ledger has a pump and not only a well.
+
+#### 9.3 Data-model decision
+
+The onboarding draft is a jsonb staging record with the daily ritual's optimistic-concurrency shape, fanned out by a single commit RPC into `areas`, `goals`, `key_dates`, and `commitments` in one transaction.
+
+Rejected alternatives, recorded so they are not relitigated:
+
+- Drafting directly into `goals`/`areas`/`commitments` with a draft status. Requires adding a draft value to `goal_status`, `area_status`, and `commitment_state` to avoid adding one staging table. Rejected.
+- Adding `onboarding` to `ritual_kind`. Reuses the session machinery but makes `period_start` semantically empty, and forces an audit of every consumer that assumes kind is daily or weekly (`getRitualLanding`, the reminder RPCs, the export builders). Rejected as the larger blast radius.
+
+Field mapping for the interview:
+
+- goal to `goals.title`; the why to `goals.description`; due date to `goals.target_date`; how much it matters to `goals.priority` (1-5, already present).
+- `goals` has no impact column and does not gain one. Impact is prose and belongs in `description`.
+- The interview asks for areas first, or every goal commits with a null `area_id` and `areas` stays as dead as it is today.
+- Onboarding is where `profiles.timezone` is set explicitly. `getLocalDate(profile?.timezone ?? "UTC")` decides which calendar day a daily ritual belongs to; back-filling it from the browser on first schedule save is a source of off-by-one-day records.
+
+Completion is gated on a new `profiles.onboarded_at` column, never derived from "owns at least one goal." An owner who archives everything must not be dragged back through the wizard. A missing `profiles` row counts as not onboarded: a signed-up owner has no profile row until something creates one, so the gate cannot assume the row exists.
+
+The migration backfills `onboarded_at` once for every existing profile that owns at least one commitment or one committed ritual session. That is a one-time recognition of ledgers that already work, not a runtime derivation; after the migration the column alone decides.
+
+Staging record: `public.onboarding_drafts`, one row per owner (`user_id` unique, cascading from `auth.users` so account deletion needs no change), `draft jsonb`, `status` reusing `ritual_status`, `version`, `committed_at`. It carries the daily ritual's optimistic-concurrency shape and the same immutability trigger pattern: once committed it can never be updated or deleted. The committed row is the founding statement named in 9.5.
+
+Day-one resolution, decided: `commit_onboarding` creates one founding commitment titled by the system, not the agent, in state `completed` with `completed_at` set. It records that the owner founded the ledger on that date, which is true. The first daily ritual scores it `done` as its previous commitment and chooses one of the owner's real active commitments as next. The existing close trigger already accepts a non-active previous commitment, so no committed-ledger rule changes, and a completed row never appears in the active next-commitment list. The daily form must offer the founding commitment as the previous choice when the owner has no committed daily session yet; today both selects draw from the active list only.
+
+Gate placement, decided: the onboarding redirect lives in the application layer, in `getCurrentProfile` and the `(ritual)` layout, which already load the profile. The proxy holds claims only and must not gain a database query per request. Demo sessions are recognised by `is_anonymous` and never gated, and `/welcome` refuses a demo session by redirecting it to `/daily`.
+
+#### 9.4 Deliverables
+
+Database/security:
+
+- Forward-only migration adding `profiles.onboarded_at`, the one-time backfill from 9.3, and `public.onboarding_drafts` with owner-scoped RLS and the committed-row immutability trigger.
+- `save_onboarding_draft` and `commit_onboarding` as a separate `SECURITY INVOKER` pair, mirroring the daily split. Draft save never commits. `commit_onboarding` upserts the profile with the explicit timezone, sets `onboarded_at`, fans the draft out into `areas`, `goals`, `key_dates`, and `commitments` in one transaction, and creates the completed founding commitment from 9.3.
+- `commit_onboarding` validates that the commit produces at least one active `commitments` row beyond the founding commitment. Goals without a commitment leave `/daily` exactly as broken as it is now.
+- `add_commitment`, an owner-scoped `SECURITY INVOKER` RPC granted to `authenticated` only, that inserts one active commitment under an owned goal and appends its `created` event to `commitment_events`.
+- `seed_demo_ledger()` sets `onboarded_at` on the demo profile so a demo session never meets the gate.
+- Regenerated `src/lib/db/database.types.ts`; the orchestrator reviews the output path per 4.2.
+
+Application/WebMCP:
+
+- The four pages above, each usable with no agent present.
+- Onboarding WebMCP tools: read the onboarding draft, propose areas, propose goals, propose key dates, propose first commitments. All read-only or draft-only. No commit tool, no delete tool.
+- Tool descriptions carry the same "do not invent wording" constraint as `gyst.record_moved`, and onboarding drafts route through `draft-provenance.ts` and the `gyst:webmcp-draft-updated` event. A fabricated goal the owner never stated is the failure that discredits the entire product claim; the visible provenance trail is the mitigation.
+- Human-only "add a commitment" control on the daily and weekly forms, calling `add_commitment` from a server action. No WebMCP tool reaches it.
+- The onboarding gate in `getCurrentProfile` and the `(ritual)` layout per 9.3, with a unit test for each branch: missing profile, null `onboarded_at`, set `onboarded_at`, and demo session.
+- The daily form offers the founding commitment as the previous choice on day one, per 9.3.
+- `tests/e2e/global-setup.ts` marks its fixture owner onboarded, so every existing Playwright spec keeps passing. The new first-run spec uses its own fresh identity and removes it on teardown.
+- `tests/unit/webmcp-capability-contract.test.ts` updated: the asserted tool count moves off 14 to the new total deliberately. The commit/delete/export/sql/history name assertion is never loosened.
+- `README.md` tool count corrected in the same change.
+
+Infrastructure/release:
+
+- `src/proxy.ts` and `src/lib/supabase/proxy.ts` add `/welcome` to the protected prefixes so an unauthenticated visitor is redirected to `/login`, without disturbing the existing redirect or the `?reason=configuration` path. The proxy performs no onboarding decision.
+- Demo sessions skip onboarding entirely and continue to land on `/daily`: the seed sets `onboarded_at`, the gate exempts anonymous sessions, and `/welcome` redirects them away. `seed_demo_ledger()` refuses to overwrite an existing ledger, so an anonymous identity must never be able to write onboarding rows before it is seeded. Playwright proves the demo path is unchanged.
+- Remote migration gate evidence and release evidence for the wave, after the submission gate closes.
+
+#### 9.5 Product framing constraint
+
+An onboarding commit and a daily commit are not the same kind of record. Daily and weekly commits are immutable. Goals are living records that get retargeted, paused, and completed. The wave commits an immutable founding statement — what the owner said mattered, and why, on a given date — which seeds mutable goals and commitments derived from it. That distinction is stated on `/welcome/review` in the owner's view. Shipping the two meanings of "commit" without saying which is which weakens the one-sentence product claim this project is built on.
+
+#### 9.6 Evidence gate W9
+
+- pgTAP proves a second user can neither read nor write another owner's onboarding draft, and cannot commit it. Negative cross-user coverage is required before any remote migration gate, per the standing rule.
+- pgTAP proves `commit_onboarding` is atomic: a rejected commit leaves no partial areas, goals, key dates, or commitments.
+- pgTAP proves `commit_onboarding` refuses a draft that would produce no active commitment.
+- pgTAP proves a brand-new owner can commit a first daily ritual immediately after onboarding, with no seeded history, scoring the founding commitment and choosing a real next commitment.
+- pgTAP proves a committed onboarding draft cannot be updated or deleted, and that `add_commitment` refuses another owner's goal and appends exactly one `created` event.
+- pgTAP proves the backfill marks an existing owner with a commitment as onboarded and leaves an empty owner unmarked.
+- Unit tests prove the onboarding draft-save action never reaches a commit RPC, matching the existing daily assertion.
+- Unit test proves the WebMCP surface still contains no commit, delete, export, sql, or history tool at the new count.
+- Playwright covers the full first-run path with no agent present: sign up, complete onboarding by hand, commit, reach `/daily`, and commit a first daily ritual.
+- Playwright covers the demo entry unchanged: one click to a populated ledger, no onboarding interstitial.
+- Local and remote Supabase lint and advisors report no security or error-level finding.
+
+#### 9.7 Non-goals
+
+- No goals-management UI beyond first run. Editing, archiving, and retargeting goals stay out of this wave.
+- No agent capability to commit anything, in onboarding or elsewhere. The boundary is unchanged.
+- No change to `commit_weekly_ritual` priority storage. Promoting weekly priorities into commitment rows is a later decision, not a Wave 9 deliverable.
+- No new reminder channel or schedule capability. `/welcome/rhythm` reuses the existing form.
+- No change to how scoring affects `commitments.state`. A commitment scored `done` stays active today; retiring it on score is a ledger-rule change that needs its own decision and its own demo-seed audit.
+- No change to the ownership exports. The committed founding statement is a new owned record and belongs in the JSON and Markdown exports; that is a recorded follow-up, not a Wave 9 deliverable.
+
+#### 9.8 Cut order within the wave
+
+1. The suggested agent skill content on `/welcome/rhythm`.
+2. `/welcome/rhythm` entirely; the owner reaches `/settings/schedule` from the header as today.
+3. Key dates in the interview; areas, goals, and commitments are the minimum that unblocks `/daily`.
+4. Onboarding WebMCP tools; the hand-fillable form is the deliverable that repairs the defect.
+
+Never cut in this wave:
+
+- The first daily ritual being committable by a new owner with no seeded history.
+- At least one active commitment produced by the founding commit.
+- Onboarding being completable with no agent present.
+- The demo path reaching `/daily` in one click.
+
+#### 9.9 Approval gates
+
+This wave requires a new remote migration gate before any hosted schema change, and the standard deployment and push gates. Local schema work, tests, and the four pages are ordinary authorized repository work. No secret, provider configuration, or resource change is in scope.
+
+#### 9.10 Execution order
+
+One branch, `codex/wave9-onboarding`, one pull request, two review passes.
+
+1. Database/security delivers the migration, RPCs, pgTAP, regenerated types, and the seed change. The orchestrator commits, pushes, and opens the pull request as a draft. A fresh reviewer checks the schema, RLS, atomicity, and grants; findings go back to the same engineer until the reviewer is satisfied.
+2. Application/WebMCP delivers the gate, the four pages, the onboarding tools, the add-commitment control, and every test in 9.6. Infrastructure/release's proxy change is folded into this step because it is two lines in `src/`. The orchestrator commits and marks the pull request ready. A fresh reviewer checks the full diff; findings go back to the engineer.
+3. The orchestrator reports the evidence and stops. Merge, remote migration, and deployment wait for their gates and for the submission gate to close.
 
 ## 7. Compressed calendar
 

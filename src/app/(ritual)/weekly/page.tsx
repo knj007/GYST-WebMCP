@@ -1,5 +1,9 @@
+import { AddCommitmentForm } from "@/components/add-commitment-form";
 import { WeeklyRitualForm } from "@/components/weekly-ritual-form";
 import { WebMcpTools } from "@/components/webmcp-tools";
+import { getCurrentProfile } from "@/lib/auth/session";
+import { getActiveGoals } from "@/lib/commitments/goals";
+import { requireOnboarded } from "@/lib/onboarding/access";
 import { getWeeklyRitual, type WeeklyFinding } from "@/lib/rituals/weekly";
 
 function findingText(finding: WeeklyFinding) {
@@ -12,7 +16,8 @@ function findingText(finding: WeeklyFinding) {
 }
 
 export default async function WeeklyPage() {
-  const ritual = await getWeeklyRitual();
+  await requireOnboarded();
+  const [ritual, goals, { profile }] = await Promise.all([getWeeklyRitual(), getActiveGoals(), getCurrentProfile()]);
 
   return (
     <section className="rounded-[2rem] border border-line bg-surface p-8 sm:p-10">
@@ -26,6 +31,7 @@ export default async function WeeklyPage() {
       </section>
       {ritual.session?.status !== "committed" ? <WebMcpTools periodStart={ritual.periodStart} ritual="weekly" /> : null}
       <WeeklyRitualForm key={ritual.session?.version ?? "new-weekly-draft"} ritual={ritual} />
+      <AddCommitmentForm goals={goals} onboarded={profile?.onboarded_at !== null && profile?.onboarded_at !== undefined} />
     </section>
   );
 }

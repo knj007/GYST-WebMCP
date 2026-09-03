@@ -11,9 +11,17 @@ test("a visitor opens a populated demo ledger in one click and no account", asyn
   await expect(openDemo).toBeEnabled({ timeout: 30_000 });
   await openDemo.click();
 
+  // One click lands on the ritual itself: no /welcome interstitial, because the
+  // seed marks the demo profile onboarded and the gate exempts demo sessions.
   await expect(page).toHaveURL(/\/daily$/);
   await expect(page.getByText("Demo session.")).toBeVisible();
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Fictional demo owner");
+
+  // The welcome pages refuse a demo session outright.
+  await page.goto("/welcome");
+  await expect(page).toHaveURL(/\/daily$/);
+  await page.goto("/welcome/goals");
+  await expect(page).toHaveURL(/\/daily$/);
 
   // Seeded history is present and the commitments it scored are selectable, so
   // the ritual can be conducted rather than merely displayed.

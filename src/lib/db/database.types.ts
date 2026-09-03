@@ -437,11 +437,56 @@ export type Database = {
           },
         ]
       }
+      onboarding_drafts: {
+        Row: {
+          committed_at: string | null
+          created_at: string
+          draft: Json
+          founding_commitment_id: string | null
+          id: string
+          status: Database["public"]["Enums"]["ritual_status"]
+          updated_at: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          committed_at?: string | null
+          created_at?: string
+          draft?: Json
+          founding_commitment_id?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["ritual_status"]
+          updated_at?: string
+          user_id: string
+          version?: number
+        }
+        Update: {
+          committed_at?: string | null
+          created_at?: string
+          draft?: Json
+          founding_commitment_id?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["ritual_status"]
+          updated_at?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_drafts_founding_commitment_fkey"
+            columns: ["user_id", "founding_commitment_id"]
+            isOneToOne: false
+            referencedRelation: "commitments"
+            referencedColumns: ["user_id", "id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
           display_name: string | null
           id: string
+          onboarded_at: string | null
           ritual_version: string
           timezone: string
           updated_at: string
@@ -452,6 +497,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          onboarded_at?: string | null
           ritual_version?: string
           timezone?: string
           updated_at?: string
@@ -462,6 +508,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          onboarded_at?: string | null
           ritual_version?: string
           timezone?: string
           updated_at?: string
@@ -636,6 +683,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_commitment: {
+        Args: {
+          p_details?: string
+          p_due_on?: string
+          p_goal_id: string
+          p_title: string
+        }
+        Returns: {
+          commitment_id: string
+        }[]
+      }
       claim_due_reminder_notifications: {
         Args: {
           p_batch_size?: number
@@ -654,6 +712,15 @@ export type Database = {
         Returns: {
           committed_at: string
           ritual_session_id: string
+          version: number
+        }[]
+      }
+      commit_onboarding: {
+        Args: { p_expected_version: number; p_onboarding_draft_id: string }
+        Returns: {
+          committed_at: string
+          founding_commitment_id: string
+          onboarding_draft_id: string
           version: number
         }[]
       }
@@ -691,14 +758,10 @@ export type Database = {
           version: number
         }[]
       }
-      save_weekly_ritual_draft: {
-        Args: {
-          p_draft: Json
-          p_expected_session_version?: number
-          p_period_start: string
-        }
+      save_onboarding_draft: {
+        Args: { p_draft: Json; p_expected_version?: number }
         Returns: {
-          ritual_session_id: string
+          onboarding_draft_id: string
           status: Database["public"]["Enums"]["ritual_status"]
           version: number
         }[]
@@ -718,6 +781,18 @@ export type Database = {
           ritual_kind: Database["public"]["Enums"]["ritual_kind"]
           timezone: string
           weekday: number | null
+        }[]
+      }
+      save_weekly_ritual_draft: {
+        Args: {
+          p_draft: Json
+          p_expected_session_version?: number
+          p_period_start: string
+        }
+        Returns: {
+          ritual_session_id: string
+          status: Database["public"]["Enums"]["ritual_status"]
+          version: number
         }[]
       }
       seed_demo_ledger: { Args: never; Returns: Json }

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 
 import { getCurrentProfile } from "@/lib/auth/session";
 import { readDailyDraft } from "@/lib/rituals/daily-draft";
@@ -75,6 +76,7 @@ export async function saveDailyDraft(
     await persistDailyDraft(formData);
     return { message: "Draft saved. Only you can commit the final record.", status: "success" };
   } catch (error) {
+    unstable_rethrow(error);
     return {
       message: error instanceof Error ? error.message : "Unable to save the daily draft.",
       status: "error",
@@ -110,6 +112,7 @@ export async function commitDailyRitual(
     revalidatePath("/daily");
     return { message: "Daily ritual committed. The record is now immutable.", status: "success" };
   } catch (error) {
+    unstable_rethrow(error);
     if (error instanceof Error && error.message === "Today's daily ritual is already committed.") {
       revalidatePath("/daily");
       return { message: "Daily ritual committed. The record is now immutable.", status: "success" };
