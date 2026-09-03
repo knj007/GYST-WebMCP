@@ -36,6 +36,21 @@ describe("WebMCP ritual lifecycle", () => {
     expect(registrations.some(({ tool }) => tool.name.includes("daily"))).toBe(false);
   });
 
+  test("registers only the five onboarding tools and routes their proposals to the onboarding endpoint", async () => {
+    document.modelContext = { registerTool: vi.fn(async (tool, { signal }) => { registrations.push({ signal, tool }); }) };
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ effect: "Replaced areas.", message: "Draft updated.", uncommitted: true, updated_fields: ["areas"] }), { status: 200 }));
+    render(<WebMcpTools draftKey="draft" ritual="onboarding" />);
+    await waitFor(() => expect(registrations).toHaveLength(5));
+    expect(registrations.map(({ tool }) => tool.name).sort()).toEqual(["gyst.get_onboarding_draft", "gyst.propose_areas", "gyst.propose_first_commitments", "gyst.propose_goals", "gyst.propose_key_dates"]);
+    expect(registrations.find(({ tool }) => tool.name === "gyst.get_onboarding_draft")?.tool.annotations?.readOnlyHint).toBe(true);
+    expect(registrations.some(({ tool }) => /daily|weekly/.test(tool.name))).toBe(false);
+    const propose = registrations.find(({ tool }) => tool.name === "gyst.propose_areas")?.tool;
+    await expect(propose!.execute({ areas: [{ key: "studio", title: "Studio" }] })).resolves.toMatchObject({ uncommitted: true, updated_fields: ["areas"] });
+    expect(fetchMock).toHaveBeenCalledWith("/api/webmcp/onboarding", expect.objectContaining({ method: "POST" }));
+    await waitFor(() => expect(refresh).toHaveBeenCalled());
+    fetchMock.mockRestore();
+  });
+
   test("refreshes the ritual after a successful agent draft edit", async () => {
     document.modelContext = { registerTool: vi.fn(async (tool, { signal }) => { registrations.push({ signal, tool }); }) };
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ effect: "Updated moved_text.", message: "Draft updated.", uncommitted: true, updated_fields: ["moved_text"] }), { status: 200 }));

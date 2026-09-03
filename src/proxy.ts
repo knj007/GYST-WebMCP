@@ -7,5 +7,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/daily/:path*", "/weekly/:path*", "/login"],
+  matcher: ["/daily/:path*", "/weekly/:path*", "/welcome/:path*", "/login"],
 };

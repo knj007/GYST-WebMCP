@@ -771,16 +771,16 @@ export type Database = {
           p_enabled: boolean
           p_local_time: string
           p_ritual_kind: Database["public"]["Enums"]["ritual_kind"]
-          p_weekday?: number
+          p_weekday?: number | null
         }
         Returns: {
           cadence: Database["public"]["Enums"]["reminder_cadence"]
           enabled: boolean
           local_time: string
-          next_run_at: string
+          next_run_at: string | null
           ritual_kind: Database["public"]["Enums"]["ritual_kind"]
           timezone: string
-          weekday: number
+          weekday: number | null
         }[]
       }
       save_weekly_ritual_draft: {

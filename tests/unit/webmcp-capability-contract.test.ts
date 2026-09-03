@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
@@ -11,18 +11,33 @@ const webMcpToolsPath = join(repositoryRoot, "src", "lib", "webmcp");
 const rootLayoutPath = join(repositoryRoot, "src", "app", "layout.tsx");
 
 describe("WebMCP daily capability boundary", () => {
-  test("registers only the fourteen draft/read tools and never a commit or delete tool", () => {
+  test("registers only the nineteen draft/read tools and never a commit or delete tool", () => {
     expect(existsSync(webMcpToolsPath)).toBe(true);
-    const tools = readFileSync(join(webMcpToolsPath, "contracts.ts"), "utf8");
     const registration = readFileSync(join(repositoryRoot, "src", "components", "webmcp-tools.tsx"), "utf8");
     const toolNames = Array.from(registration.matchAll(/(?:name: |mutation\()"(gyst\.[^"]+)"/g), (match) => match[1]).filter((name): name is string => typeof name === "string");
-    expect(toolNames).toHaveLength(14);
+    // Seven daily, seven weekly, five onboarding. The count moved from 14 to 19
+    // deliberately in Wave 9; the name assertion below is never loosened.
+    expect(toolNames).toHaveLength(19);
+    expect(toolNames.filter((name) => /^gyst\.(?:get_onboarding_draft|propose_)/.test(name))).toHaveLength(5);
     expect(registration).toContain('oneOf: [');
     expect(registration).toContain('{ required: ["text", "type"] }');
     expect(toolNames.some((name) => /^gyst\.(?:commit|delete|export|sql|history)/i.test(name))).toBe(false);
-    expect(tools).not.toContain("commit_daily_ritual");
-    expect(readFileSync(join(repositoryRoot, "src", "app", "api", "webmcp", "daily", "route.ts"), "utf8")).not.toContain("commit_daily_ritual");
-    expect(readFileSync(join(repositoryRoot, "src", "app", "api", "webmcp", "weekly", "route.ts"), "utf8")).not.toContain("commit_weekly_ritual");
+
+    const forbiddenRpcs = ["commit_daily_ritual", "commit_weekly_ritual", "commit_onboarding", "add_commitment"];
+    const webMcpSources = [
+      ...readdirSync(webMcpToolsPath).map((file) => join(webMcpToolsPath, file)),
+      join(repositoryRoot, "src", "app", "api", "webmcp", "daily", "route.ts"),
+      join(repositoryRoot, "src", "app", "api", "webmcp", "weekly", "route.ts"),
+      join(repositoryRoot, "src", "app", "api", "webmcp", "onboarding", "route.ts"),
+      join(repositoryRoot, "src", "app", "api", "webmcp", "context", "daily", "route.ts"),
+      join(repositoryRoot, "src", "app", "api", "webmcp", "context", "weekly", "route.ts"),
+      join(repositoryRoot, "src", "app", "api", "webmcp", "context", "onboarding", "route.ts"),
+      join(repositoryRoot, "src", "components", "webmcp-tools.tsx"),
+    ];
+    for (const path of webMcpSources) {
+      const source = readFileSync(path, "utf8");
+      for (const rpc of forbiddenRpcs) expect(source, `${path} references ${rpc}`).not.toContain(rpc);
+    }
   });
 
   test("keeps the commit RPC out of the draft-save server action", () => {

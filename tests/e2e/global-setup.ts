@@ -43,7 +43,9 @@ export default async function globalSetup() {
 
   const userId = data.user.id;
   const [{ error: profileError }, { error: commitmentError }] = await Promise.all([
-    client.from("profiles").insert({ display_name: "Local E2E", timezone: "UTC", user_id: userId }),
+    // The fixture owner is already onboarded, so the ritual specs never meet
+    // the first-run gate. The first-run spec founds its own identity instead.
+    client.from("profiles").insert({ display_name: "Local E2E", onboarded_at: new Date().toISOString(), timezone: "UTC", user_id: userId }),
     client.from("commitments").insert({ title: commitmentTitle, user_id: userId }),
   ]);
 

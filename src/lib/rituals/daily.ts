@@ -2,6 +2,7 @@ import "server-only";
 
 import type { Database } from "@/lib/db/database.types";
 import { getCurrentProfile } from "@/lib/auth/session";
+import { type CommitmentOption, previousCommitmentOptions } from "@/lib/rituals/daily-commitments";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 type DailyEntry = Pick<
@@ -24,11 +25,13 @@ type DailySession = Pick<
 >;
 
 export type DailyRitual = {
-  commitments: Array<
-    Pick<Database["public"]["Tables"]["commitments"]["Row"], "id" | "due_on" | "title">
-  >;
+  // Active commitments: the only choices for tomorrow's commitment.
+  commitments: CommitmentOption[];
   entry: DailyEntry | null;
   periodStart: string;
+  // The choices for scoring the previous commitment. On day one this also
+  // carries the completed founding commitment.
+  previousCommitments: CommitmentOption[];
   profile: Awaited<ReturnType<typeof getCurrentProfile>>["profile"];
   session: DailySession | null;
 };
@@ -54,30 +57,68 @@ export async function getDailyRitual(): Promise<DailyRitual> {
   const supabase = await createServerSupabaseClient();
   const periodStart = getLocalDate(profile?.timezone ?? "UTC");
 
-  const [{ data: session, error: sessionError }, { data: commitments, error: commitmentsError }] =
-    await Promise.all([
-      supabase
-        .from("ritual_sessions")
-        .select("id, period_start, status, version, committed_at")
-        .eq("user_id", identity.userId)
-        .eq("kind", "daily")
-        .eq("period_start", periodStart)
-        .maybeSingle(),
-      supabase
-        .from("commitments")
-        .select("id, title, due_on")
-        .eq("user_id", identity.userId)
-        .eq("state", "active")
-        .order("due_on", { ascending: true, nullsFirst: false })
-        .order("created_at", { ascending: true }),
-    ]);
+  const [
+    { data: session, error: sessionError },
+    { data: commitments, error: commitmentsError },
+    { data: committedDaily, error: committedDailyError },
+    { data: onboarding, error: onboardingError },
+  ] = await Promise.all([
+    supabase
+      .from("ritual_sessions")
+      .select("id, period_start, status, version, committed_at")
+      .eq("user_id", identity.userId)
+      .eq("kind", "daily")
+      .eq("period_start", periodStart)
+      .maybeSingle(),
+    supabase
+      .from("commitments")
+      .select("id, title, due_on")
+      .eq("user_id", identity.userId)
+      .eq("state", "active")
+      .order("due_on", { ascending: true, nullsFirst: false })
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("ritual_sessions")
+      .select("id")
+      .eq("user_id", identity.userId)
+      .eq("kind", "daily")
+      .eq("status", "committed")
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("onboarding_drafts")
+      .select("founding_commitment_id")
+      .eq("user_id", identity.userId)
+      .maybeSingle(),
+  ]);
 
-  if (sessionError || commitmentsError) {
+  if (sessionError || commitmentsError || committedDailyError || onboardingError) {
     throw new Error("Unable to load the daily ritual.");
   }
 
+  const activeCommitments = commitments ?? [];
+  const hasCommittedDaily = committedDaily !== null;
+  let founding: CommitmentOption | null = null;
+
+  if (!hasCommittedDaily && onboarding?.founding_commitment_id) {
+    const { data: foundingCommitment, error: foundingError } = await supabase
+      .from("commitments")
+      .select("id, title, due_on")
+      .eq("user_id", identity.userId)
+      .eq("id", onboarding.founding_commitment_id)
+      .maybeSingle();
+
+    if (foundingError) {
+      throw new Error("Unable to load the daily ritual.");
+    }
+
+    founding = foundingCommitment;
+  }
+
+  const previousCommitments = previousCommitmentOptions({ active: activeCommitments, founding, hasCommittedDaily });
+
   if (!session) {
-    return { commitments: commitments ?? [], entry: null, periodStart, profile, session: null };
+    return { commitments: activeCommitments, entry: null, periodStart, previousCommitments, profile, session: null };
   }
 
   const { data: entry, error: entryError } = await supabase
@@ -93,5 +134,5 @@ export async function getDailyRitual(): Promise<DailyRitual> {
     throw new Error("Unable to load the daily ritual draft.");
   }
 
-  return { commitments: commitments ?? [], entry, periodStart, profile, session };
+  return { commitments: activeCommitments, entry, periodStart, previousCommitments, profile, session };
 }

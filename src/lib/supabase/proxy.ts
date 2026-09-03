@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/lib/db/database.types";
 import { readSupabasePublicConfig } from "@/lib/supabase/config";
 
-const protectedPrefixes = ["/daily", "/weekly"];
+const protectedPrefixes = ["/daily", "/weekly", "/welcome"];
 
 function isProtectedPath(pathname: string) {
   return protectedPrefixes.some(
