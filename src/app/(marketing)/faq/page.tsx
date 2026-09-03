@@ -13,12 +13,16 @@ export const metadata: Metadata = {
     "What GYST is, how its WebMCP tools work, where the challenge submission lives, and how to conduct the ritual with an agent.",
 };
 
-const sections = [
-  { blurb: "What GYST is, what it asks of you, and who can see it.", id: "basics", title: "The basics" },
-  { blurb: "What the site hands an agent, and what it deliberately withholds.", id: "webmcp", title: "WebMCP" },
-  { blurb: "What this was built for and where to find the entry.", id: "submission", title: "The challenge submission" },
-  { blurb: "Claude, ChatGPT, Gemini, and what to do when no tools appear.", id: "agents", title: "Using GYST with an agent" },
-];
+// Keyed by the anchor id rather than ordered, so a section can be added or
+// moved without silently sliding every blurb under the wrong heading.
+const sections = {
+  basics: { blurb: "What GYST is, what it asks of you, and who can see it.", title: "The basics" },
+  webmcp: { blurb: "What the site hands an agent, and what it deliberately withholds.", title: "WebMCP" },
+  submission: { blurb: "What this was built for and where to find the entry.", title: "The challenge submission" },
+  agents: { blurb: "Claude, ChatGPT, Gemini, and what to do when no tools appear.", title: "Using GYST with an agent" },
+} as const;
+
+const inlineLinkClass = "font-medium text-accent underline underline-offset-4";
 
 const readFirstPrompt = `Use the GYST WebMCP tools.
 
@@ -43,7 +47,7 @@ function Code({ children }: { children: ReactNode }) {
 
 function External({ children, href }: { children: ReactNode; href: string }) {
   return (
-    <a className="font-medium text-accent underline underline-offset-4" href={href} rel="noreferrer" target="_blank">
+    <a className={inlineLinkClass} href={href} rel="noreferrer" target="_blank">
       {children}
     </a>
   );
@@ -64,11 +68,11 @@ export default function FaqPage() {
         </p>
 
         <nav aria-label="Sections" className="mt-10 flex flex-wrap gap-2">
-          {sections.map((section) => (
+          {Object.entries(sections).map(([id, section]) => (
             <a
               className="rounded-full border border-line bg-surface px-4 py-2 text-sm transition-colors hover:border-accent hover:text-accent"
-              href={`#${section.id}`}
-              key={section.id}
+              href={`#${id}`}
+              key={id}
             >
               {section.title}
             </a>
@@ -77,9 +81,9 @@ export default function FaqPage() {
 
         <section aria-labelledby="basics-heading" className="mt-16 scroll-mt-8" id="basics">
           <h2 className="text-2xl font-semibold tracking-tight" id="basics-heading">
-            The basics
+            {sections.basics.title}
           </h2>
-          <p className="mt-2 mb-6 text-muted">{sections[0]?.blurb}</p>
+          <p className="mt-2 mb-6 text-muted">{sections.basics.blurb}</p>
           <FaqAccordion>
             <FaqItem question="What is GYST?">
               <p>
@@ -103,8 +107,8 @@ export default function FaqPage() {
             <FaqItem question="What happens in the weekly review?">
               <p>
                 GYST reads only the days you have already committed in the current ISO week and surfaces bounded
-                findings — a commitment repeatedly not done, a blocker that keeps recurring, a win you buried, a key
-                date approaching. You add observations, set the arrow to up, steady, or down, record the decision in
+                findings — a commitment that keeps not landing, a blocker that keeps recurring, a win you buried, a
+                key date approaching, work logged outside your priorities. You add observations, set the arrow to up, steady, or down, record the decision in
                 your own words, and set up to five dated priorities.
               </p>
               <p>
@@ -120,7 +124,8 @@ export default function FaqPage() {
               </p>
               <p>
                 Committing is a separate human control on the page, and the boundary is enforced three deep: no commit
-                tool exists in the agent surface, a unit test fails the build if one is ever added, and the database
+                tool exists in the agent surface, a unit test in this repository fails if one is ever added, and the
+                database
                 itself enforces ownership, required fields, atomic close, and post-commit immutability.
               </p>
             </FaqItem>
@@ -145,22 +150,24 @@ export default function FaqPage() {
             </FaqItem>
             <FaqItem question="Can I export or delete everything?">
               <p>
-                Yes, from <Term>Settings → Account</Term> on a permanent account. You can export the committed ledger as
+                Yes, from <Term>Account</Term> in the header, on a permanent account. You can export the committed ledger as
                 portable <Code>gyst-portable-v1</Code> JSON or as readable Markdown, take a full backup that also
                 includes drafts, or permanently delete the account, which removes the rows you own and revokes your
                 sessions.
               </p>
               <p>
-                Export is deliberately not a WebMCP tool. An agent can read the ritual it is helping with; it cannot
-                pull your archive.
+                Export is deliberately not a WebMCP tool. A WebMCP agent can read the ritual it is helping with; it
+                cannot pull your archive. An agent that drives your browser is a different matter — see the caveat in
+                the last section.
               </p>
             </FaqItem>
             <FaqItem question="Will GYST email me?">
               <p>
-                Only if you ask it to. From <Term>Settings → Schedule</Term> you can turn on daily and weekly reminders
+                Only if you ask it to. From <Term>Schedule</Term> in the header you can turn on daily and weekly
+                reminders
                 in your own timezone, and pause or resume them whenever you want. Delivery runs in a small stateless
-                worker that can claim and reconcile notification events and nothing else — it has no ability to write to
-                your ledger.
+                worker that calls four reminder routines and nothing else — claim what is due, check the claim, record
+                the send, record a failure. It never touches your ledger tables.
               </p>
             </FaqItem>
             <FaqItem question="Do I need an AI agent to use GYST at all?">
@@ -181,9 +188,9 @@ export default function FaqPage() {
 
         <section aria-labelledby="webmcp-heading" className="mt-16 scroll-mt-8" id="webmcp">
           <h2 className="text-2xl font-semibold tracking-tight" id="webmcp-heading">
-            WebMCP
+            {sections.webmcp.title}
           </h2>
-          <p className="mt-2 mb-6 text-muted">{sections[1]?.blurb}</p>
+          <p className="mt-2 mb-6 text-muted">{sections.webmcp.blurb}</p>
           <FaqAccordion>
             <FaqItem question="What is WebMCP?">
               <p>
@@ -199,7 +206,10 @@ export default function FaqPage() {
               </p>
             </FaqItem>
             <FaqItem question="What tools does GYST publish?">
-              <p>Twenty-two, and every one of them is read-only or draft-only.</p>
+              <p>
+                Twenty-two. Not one of them can commit, delete, or export: they read, they navigate, or they write to a
+                draft.
+              </p>
               <ul className="list-disc space-y-1 pl-5">
                 <li>
                   <Term>Three site-wide</Term>, registered before the page hydrates so an agent arriving early can still
@@ -218,8 +228,8 @@ export default function FaqPage() {
               </ul>
               <p>
                 The ritual tools are scoped to their route and exist only while you are on it. On each ritual page the{" "}
-                <Term>WebMCP agent assistance</Term> panel lists exactly what registered in that tab, and labels every
-                tool read only or draft only.
+                <Term>WebMCP agent assistance</Term> panel lists the tools that page offers, labels each one read only
+                or draft only, and reports how many actually registered in that tab.
               </p>
             </FaqItem>
             <FaqItem question="Why is there no commit tool?">
@@ -230,7 +240,8 @@ export default function FaqPage() {
               </p>
               <p>
                 GYST removes the capability instead. There is no commit, delete, export, history, or SQL tool in the
-                registered surface at all, and a test fails the build if one ever appears. A misbehaving or hijacked
+                registered surface at all, and a test in this repository fails if one ever appears. A misbehaving or
+                hijacked
                 agent cannot commit your week, because there is nothing for it to call.
               </p>
             </FaqItem>
@@ -244,8 +255,8 @@ export default function FaqPage() {
             <FaqItem question="How do I know what the agent changed?">
               <p>
                 Every field a draft tool touches is marked <Term>Agent updated — review</Term> on the page, and a
-                running panel lists each call, which fields it changed, and that it was not committed. Rewrite a field in
-                your own words and its marker clears, because that field is yours again.
+                running panel lists the most recent calls, which fields each one changed, and that none of them were
+                committed. Rewrite a field in your own words and its marker clears, because that field is yours again.
               </p>
             </FaqItem>
             <FaqItem question="Can the agent put words in my record that I never said?">
@@ -271,14 +282,15 @@ export default function FaqPage() {
 
         <section aria-labelledby="submission-heading" className="mt-16 scroll-mt-8" id="submission">
           <h2 className="text-2xl font-semibold tracking-tight" id="submission-heading">
-            The challenge submission
+            {sections.submission.title}
           </h2>
-          <p className="mt-2 mb-6 text-muted">{sections[2]?.blurb}</p>
+          <p className="mt-2 mb-6 text-muted">{sections.submission.blurb}</p>
           <FaqAccordion>
             <FaqItem question="What was GYST built for?">
               <p>
                 The <Term>OpenAI WebMCP Challenge</Term>, hosted on Devpost with Google Chrome, Cloudflare, Shopify,
-                Vercel, Render, and Netlify as partners. Submissions closed on 2026-09-03 and judging runs through
+                Vercel, Render, and Netlify as partners. Submissions closed on 2026-09-03 at 1:00 p.m. PT and judging
+                runs through
                 2026-09-21, scored on usefulness, originality, execution, thoughtful use of WebMCP, and the quality of
                 the human-agent experience.
               </p>
@@ -292,7 +304,7 @@ export default function FaqPage() {
                 </li>
                 <li>
                   <Term>Live site</Term> — you are on it. Judges need no credentials; use{" "}
-                  <Link className="font-medium text-accent underline underline-offset-4" href="/">
+                  <Link className={inlineLinkClass} href="/">
                     Open the demo
                   </Link>
                   .
@@ -338,9 +350,9 @@ export default function FaqPage() {
 
         <section aria-labelledby="agents-heading" className="mt-16 scroll-mt-8" id="agents">
           <h2 className="text-2xl font-semibold tracking-tight" id="agents-heading">
-            Using GYST with an agent
+            {sections.agents.title}
           </h2>
-          <p className="mt-2 mb-6 text-muted">{sections[3]?.blurb}</p>
+          <p className="mt-2 mb-6 text-muted">{sections.agents.blurb}</p>
           <FaqAccordion>
             <FaqItem question="Which browsers and agents can see the tools today?">
               <p>
@@ -361,7 +373,7 @@ export default function FaqPage() {
                   WebMCP bridge extension is the way in — see the next answer.
                 </li>
                 <li>
-                  <Term>Gemini</Term> — no announced WebMCP support.
+                  <Term>Gemini</Term> — we are aware of no announced WebMCP support.
                 </li>
                 <li>
                   <Term>Firefox and Safari</Term> — engaged with the standards work, not committed.
@@ -384,7 +396,8 @@ export default function FaqPage() {
                 rather than by typing into fields.
               </p>
               <p>
-                <Term>One caveat worth understanding.</Term> An agent driving your browser is acting as you, so the “no
+                <strong className="font-semibold text-foreground">One caveat worth understanding.</strong> An agent
+                driving your browser is acting as you, so the “no
                 commit tool” guarantee does not restrain it — it can press the commit button the same way it presses any
                 other. Tell it explicitly to stop at <Term>Save draft</Term> and leave the commit to you. That
                 difference is the whole argument for WebMCP: a tool surface can withhold a capability, and a pair of
@@ -409,7 +422,7 @@ export default function FaqPage() {
             </FaqItem>
             <FaqItem question="How do I use GYST with Gemini?">
               <p>
-                There is no announced WebMCP support in Gemini, so the tool surface will not appear. The ordinary form
+                We are aware of no announced WebMCP support in Gemini, so expect no tool surface. The ordinary form
                 works fine, and a Gemini agent that drives Chrome for you can conduct the ritual by reading and typing —
                 under the same caveat as Claude in Chrome. It can press commit, so tell it to stop at the draft.
               </p>
@@ -432,8 +445,8 @@ export default function FaqPage() {
             <FaqItem question="No tools are showing up. What should I check?">
               <ul className="list-disc space-y-1 pl-5">
                 <li>
-                  Are you on a ritual page? The seven-tool surfaces are scoped to the daily and weekly routes and
-                  disappear elsewhere by design.
+                  Are you on a ritual page? The tool surfaces are scoped to the daily, weekly, and first-run routes,
+                  and disappear elsewhere by design — including once you have committed that ritual.
                 </li>
                 <li>Are you signed in, or in the demo? The read tools need an owner session.</li>
                 <li>Does your browser or agent client support WebMCP at all? See the compatibility answer above.</li>

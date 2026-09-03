@@ -17,8 +17,8 @@ export function FaqAccordion({ children }: { children: ReactNode }) {
 export function FaqItem({ children, question }: { children: ReactNode; question: string }) {
   return (
     <details className="group border-b border-line last:border-b-0">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5 font-medium marker:content-none [&::-webkit-details-marker]:hidden">
-        <span>{question}</span>
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5 marker:content-none [&::-webkit-details-marker]:hidden">
+        <h3 className="font-medium">{question}</h3>
         <span aria-hidden="true" className="shrink-0 text-xl leading-none text-accent transition-transform duration-200 group-open:rotate-45">
           +
         </span>
