@@ -16,7 +16,7 @@ function request(body: string) {
 }
 
 describe("signup route", () => {
-  beforeEach(() => mocks.signUpWithTurnstile.mockReset());
+  beforeEach(() => vi.resetAllMocks());
 
   test.each(["null", "[]", '"not-an-object"', "{"])(
     "rejects JSON %s without reaching signup",
@@ -41,6 +41,7 @@ describe("signup route", () => {
     );
 
     expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ message: "Check your email to confirm your account.", status: "success" });
     expect(mocks.signUpWithTurnstile).toHaveBeenCalledWith(
       { email: "person@example.test", password: "example-password", turnstileToken: "token" },
       expect.any(Object),

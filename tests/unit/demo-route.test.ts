@@ -16,7 +16,7 @@ function request(body: string) {
 }
 
 describe("judge demo route", () => {
-  beforeEach(() => mocks.startDemoSession.mockReset());
+  beforeEach(() => vi.resetAllMocks());
 
   test.each(["null", "[]", '"not-an-object"', "{"])(
     "rejects JSON %s without starting a demo session",
